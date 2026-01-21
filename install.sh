@@ -1,48 +1,37 @@
 #!/bin/bash
 set -e
 
-REPO_URL="https://github.com/pratimugale/TetrisADAPT.jl"
+# Configuration
+REPO_URL="https://github.com/pratimugale/TetrisADAPT.jl.git"
 DIR_NAME="TetrisADAPT.jl"
+VENV_DIR="venv"
 
-# Clean up previous install if it exists to ensure a fresh clone
-if [ -d "$DIR_NAME" ]; then
-    echo "Directory $DIR_NAME already exists. Removing it..."
-    rm -rf "$DIR_NAME"
-fi
+echo "Starting installation for mis-tetris-adapt..."
 
-echo "Cloning $REPO_URL..."
-git clone "$REPO_URL"
-
-cd "$DIR_NAME"
-
-echo "Creating Python virtual environment..."
-python3 -m venv venv
-source venv/bin/activate
-
-# Export JULIA_PYTHON to ensure PyCall uses the venv python
-export JULIA_PYTHON="$(pwd)/venv/bin/python"
-echo "Set JULIA_PYTHON to $JULIA_PYTHON"
-
-echo "Upgrading pip..."
-pip install --upgrade pip
-
-echo "Running make install..."
-make install
-
-echo "Running make install-kamis..."
-make install-kamis
-
-cd TetrisADAPT.jl/external/KaMIS && ./compile_withcmake.sh
-
-echo "Running make smoke..."
-cd TetrisADAPT.jl && make smoke
-
-# Check if smoke-kamis target exists before running
-if grep -q "smoke-kamis:" Makefile; then
-    echo "Running make smoke-kamis..."
-    cd TetrisADAPT.jl && make smoke-kamis
+# 1. Clone TetrisADAPT.jl if it doesn't exist
+if [ ! -d "$DIR_NAME" ]; then
+    echo "Cloning $REPO_URL..."
+    git clone "$REPO_URL"
 else
-    echo "Warning: Make target 'smoke-kamis' not found in Makefile. Installation partially confirmed (smoke passed, smoke-kamis missing)."
+    echo "$DIR_NAME already exists. Skipping clone."
 fi
 
-echo "Installation Script Finished"
+# 2. Setup Python Virtual Environment
+echo "Setting up Python virtual environment..."
+python3 -m venv "$VENV_DIR"
+
+# Activate venv for the script execution
+source "$VENV_DIR/bin/activate"
+
+# 3. Install Python Dependencies
+echo "Installing Python dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 4. Build Julia Dependencies (PyCall)
+echo "Building Julia dependencies with PyCall linked to venv..."
+# Explicitly set PYTHON to the absolute path of the venv python
+export PYTHON="$(pwd)/$VENV_DIR/bin/python3"
+julia --project=. -e 'using Pkg; Pkg.develop(path="TetrisADAPT.jl"); Pkg.build("PyCall"); Pkg.instantiate()'
+
+echo "Installation script finished successfully."

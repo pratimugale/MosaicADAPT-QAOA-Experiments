@@ -1,16 +1,10 @@
+# Variables
+VENV_DIR = venv
+
+# Main entry point
 install:
+	chmod +x install.sh
 	./install.sh
-
-update-tetris:
-	cd TetrisADAPT.jl && git pull origin main
-	cd TetrisADAPT.jl && julia --project=. -e 'using Pkg; Pkg.instantiate()'
-
-install-python-deps:
-	python3 -m venv venv
-	./venv/bin/pip install numpy satqubolib
-
-init-julia-project:
-	julia --project=. -e 'using Pkg; Pkg.develop(path="TetrisADAPT.jl"); Pkg.resolve(); Pkg.instantiate()'
 
 generate-dataset: install-python-deps
 	./venv/bin/python3 src/dataset/satqubolib_max3sat.py 10 4.24 1 --seed 126 --type balanced

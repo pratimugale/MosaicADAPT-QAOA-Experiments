@@ -1,8 +1,6 @@
 import ADAPT
 import ADAPT.ADAPT_QAOA: QAOAObservable
 
-include(joinpath(@__DIR__, "..", "utils", "max3sat.jl"))
-
 """
     run_bruteforce(instance::Dict)
 

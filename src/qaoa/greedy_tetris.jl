@@ -5,11 +5,6 @@ import ADAPT.ADAPT_QAOA: QAOAObservable
 import Statistics: mean
 import LinearAlgebra: norm
 
-
-# Include utils - using relative paths to ensuring they are correctly located
-include(joinpath(@__DIR__, "..", "utils", "max3sat.jl"))
-# Hamiltonians are available via ADAPT.Hamiltonians.Max3SAT
-
 """
     run_greedy_tetris(config::TetrisConfig, instance::Dict)
 
