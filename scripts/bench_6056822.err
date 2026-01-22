@@ -1,0 +1,17 @@
+  Activating project at `~/2026/mis-tetris-adapt`
+ERROR: LoadError: IOError: unlink("/home/4287/2026/mis-tetris-adapt/experiments/../dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14000.cnf"): no such file or directory (ENOENT)
+Stacktrace:
+ [1] uv_error
+   @ ./libuv.jl:106 [inlined]
+ [2] unlink(p::String)
+   @ Base.Filesystem ./file.jl:1105
+ [3] rm(path::String; force::Bool, recursive::Bool)
+   @ Base.Filesystem ./file.jl:283
+ [4] rm
+   @ ./file.jl:273 [inlined]
+ [5] run_scaling_benchmark()
+   @ Main ~/2026/mis-tetris-adapt/experiments/benchmark_scaling.jl:169
+ [6] top-level scope
+   @ ~/2026/mis-tetris-adapt/experiments/benchmark_scaling.jl:184
+in expression starting at /home/4287/2026/mis-tetris-adapt/experiments/benchmark_scaling.jl:184
+make: *** [benchmark-scaling] Error 1
