@@ -32,6 +32,6 @@ pip install -r requirements.txt
 echo "Building Julia dependencies with PyCall linked to venv..."
 # Explicitly set PYTHON to the absolute path of the venv python
 export PYTHON="$(pwd)/$VENV_DIR/bin/python3"
-julia --project=. -e 'using Pkg; Pkg.develop(path="TetrisADAPT.jl"); Pkg.build("PyCall"); Pkg.instantiate()'
+julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.develop(path="TetrisADAPT.jl"); Pkg.build("PyCall")'
 
 echo "Installation script finished successfully."
