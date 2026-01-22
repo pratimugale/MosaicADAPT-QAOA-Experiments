@@ -1,0 +1,271 @@
+Adding package `python/3.13.1` to your environment
+Adding dependency `gcc/12.2.0` to your environment
+Adding package `julia/1.11.2` to your environment
+Job started on r1n00 at Thu Jan 22 07:02:03 EST 2026
+Running make benchmark-scaling
+julia --project=. experiments/benchmark_scaling.jl  
+Generating 50 instance(s) of 3-SAT (balanced) with 12 variables and 50 clauses (ratio: 4.24) (seed: 14000)
+Instance 1/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14000.cnf (seed: 14000)
+Instance 2/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14001.cnf (seed: 14001)
+Instance 3/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14002.cnf (seed: 14002)
+Instance 4/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14003.cnf (seed: 14003)
+Instance 5/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14004.cnf (seed: 14004)
+Instance 6/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14005.cnf (seed: 14005)
+Instance 7/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14006.cnf (seed: 14006)
+Instance 8/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14007.cnf (seed: 14007)
+Instance 9/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14008.cnf (seed: 14008)
+Instance 10/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14009.cnf (seed: 14009)
+Instance 11/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14010.cnf (seed: 14010)
+Instance 12/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14011.cnf (seed: 14011)
+Instance 13/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14012.cnf (seed: 14012)
+Instance 14/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14013.cnf (seed: 14013)
+Instance 15/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14014.cnf (seed: 14014)
+Instance 16/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14015.cnf (seed: 14015)
+Instance 17/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14016.cnf (seed: 14016)
+Instance 18/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14017.cnf (seed: 14017)
+Instance 19/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14018.cnf (seed: 14018)
+Instance 20/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14019.cnf (seed: 14019)
+Instance 21/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14020.cnf (seed: 14020)
+Instance 22/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14021.cnf (seed: 14021)
+Instance 23/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14022.cnf (seed: 14022)
+Instance 24/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14023.cnf (seed: 14023)
+Instance 25/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14024.cnf (seed: 14024)
+Instance 26/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14025.cnf (seed: 14025)
+Instance 27/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14026.cnf (seed: 14026)
+Instance 28/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14027.cnf (seed: 14027)
+Instance 29/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14028.cnf (seed: 14028)
+Instance 30/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14029.cnf (seed: 14029)
+Instance 31/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14030.cnf (seed: 14030)
+Instance 32/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14031.cnf (seed: 14031)
+Instance 33/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14032.cnf (seed: 14032)
+Instance 34/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14033.cnf (seed: 14033)
+Instance 35/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14034.cnf (seed: 14034)
+Instance 36/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14035.cnf (seed: 14035)
+Instance 37/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14036.cnf (seed: 14036)
+Instance 38/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14037.cnf (seed: 14037)
+Instance 39/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14038.cnf (seed: 14038)
+Instance 40/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14039.cnf (seed: 14039)
+Instance 41/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14040.cnf (seed: 14040)
+Instance 42/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14041.cnf (seed: 14041)
+Instance 43/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14042.cnf (seed: 14042)
+Instance 44/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14043.cnf (seed: 14043)
+Instance 45/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14044.cnf (seed: 14044)
+Instance 46/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14045.cnf (seed: 14045)
+Instance 47/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14046.cnf (seed: 14046)
+Instance 48/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14047.cnf (seed: 14047)
+Instance 49/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14048.cnf (seed: 14048)
+Instance 50/50 saved to: dataset/satqubolib/balancedsat/sat_12_vars_4.24_ratio_seed14049.cnf (seed: 14049)
+Successfully generated 50 instance(s)
+=== Starting Scaling Benchmark ===
+N values: [12, 14, 15, 16]
+Instances per setting: 50 (Balanced) + 50 (Triangle)
+Base Seed: 2000
+Output: /home/4287/2026/mis-tetris-adapt/experiments/../results/benchmark_scaling_2026-01-22-07-02-10.json
+
+>>> Processing N = 12 <<<
+
+  --- Generating balanced dataset for N=12 ---
+  Found 50 files to process.
+Running BruteForce on instance 1 with 12 variables
+Running greedy tetris on instance 1 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 74.81s
+Running BruteForce on instance 2 with 12 variables
+Running greedy tetris on instance 2 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 32.66s
+Running BruteForce on instance 3 with 12 variables
+Running greedy tetris on instance 3 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 48.65s
+Running BruteForce on instance 4 with 12 variables
+Running greedy tetris on instance 4 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 119.76s
+Running BruteForce on instance 5 with 12 variables
+Running greedy tetris on instance 5 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 73.62s
+Running BruteForce on instance 6 with 12 variables
+Running greedy tetris on instance 6 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 49.39s
+Running BruteForce on instance 7 with 12 variables
+Running greedy tetris on instance 7 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 142.98s
+Running BruteForce on instance 8 with 12 variables
+Running greedy tetris on instance 8 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 526.82s
+Running BruteForce on instance 9 with 12 variables
+Running greedy tetris on instance 9 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.31s
+Running BruteForce on instance 10 with 12 variables
+Running greedy tetris on instance 10 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 38.57s
+    Processed 10/50Running BruteForce on instance 11 with 12 variables
+Running greedy tetris on instance 11 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 10.69s
+Running BruteForce on instance 12 with 12 variables
+Running greedy tetris on instance 12 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 26.32s
+Running BruteForce on instance 13 with 12 variables
+Running greedy tetris on instance 13 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 69.22s
+Running BruteForce on instance 14 with 12 variables
+Running greedy tetris on instance 14 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 52.0s
+Running BruteForce on instance 15 with 12 variables
+Running greedy tetris on instance 15 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 40.71s
+Running BruteForce on instance 16 with 12 variables
+Running greedy tetris on instance 16 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 57.52s
+Running BruteForce on instance 17 with 12 variables
+Running greedy tetris on instance 17 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 181.43s
+Running BruteForce on instance 18 with 12 variables
+Running greedy tetris on instance 18 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 51.32s
+Running BruteForce on instance 19 with 12 variables
+Running greedy tetris on instance 19 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 65.48s
+Running BruteForce on instance 20 with 12 variables
+Running greedy tetris on instance 20 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 73.72s
+    Processed 20/50Running BruteForce on instance 21 with 12 variables
+Running greedy tetris on instance 21 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 534.19s
+Running BruteForce on instance 22 with 12 variables
+Running greedy tetris on instance 22 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.28s
+Running BruteForce on instance 23 with 12 variables
+Running greedy tetris on instance 23 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 42.15s
+Running BruteForce on instance 24 with 12 variables
+Running greedy tetris on instance 24 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 75.67s
+Running BruteForce on instance 25 with 12 variables
+Running greedy tetris on instance 25 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 351.94s
+Running BruteForce on instance 26 with 12 variables
+Running greedy tetris on instance 26 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 6.35s
+Running BruteForce on instance 27 with 12 variables
+Running greedy tetris on instance 27 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 65.96s
+Running BruteForce on instance 28 with 12 variables
+Running greedy tetris on instance 28 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 54.81s
+Running BruteForce on instance 29 with 12 variables
+Running greedy tetris on instance 29 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 130.0s
+Running BruteForce on instance 30 with 12 variables
+Running greedy tetris on instance 30 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 54.89s
+    Processed 30/50Running BruteForce on instance 31 with 12 variables
+Running greedy tetris on instance 31 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 11.11s
+Running BruteForce on instance 32 with 12 variables
+Running greedy tetris on instance 32 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 36.04s
+Running BruteForce on instance 33 with 12 variables
+Running greedy tetris on instance 33 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 35.13s
+Running BruteForce on instance 34 with 12 variables
+Running greedy tetris on instance 34 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 17.85s
+Running BruteForce on instance 35 with 12 variables
+Running greedy tetris on instance 35 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.2s
+Running BruteForce on instance 36 with 12 variables
+Running greedy tetris on instance 36 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 34.07s
+Running BruteForce on instance 37 with 12 variables
+Running greedy tetris on instance 37 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 88.65s
+Running BruteForce on instance 38 with 12 variables
+Running greedy tetris on instance 38 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 78.08s
+Running BruteForce on instance 39 with 12 variables
+Running greedy tetris on instance 39 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 33.7s
+Running BruteForce on instance 40 with 12 variables
+Running greedy tetris on instance 40 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 12.53s
+    Processed 40/50Running BruteForce on instance 41 with 12 variables
+Running greedy tetris on instance 41 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 20.35s
+Running BruteForce on instance 42 with 12 variables
+Running greedy tetris on instance 42 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.53s
+Running BruteForce on instance 43 with 12 variables
+Running greedy tetris on instance 43 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 19.37s
+Running BruteForce on instance 44 with 12 variables
+Running greedy tetris on instance 44 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.58s
+Running BruteForce on instance 45 with 12 variables
+Running greedy tetris on instance 45 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 644.27s
+Running BruteForce on instance 46 with 12 variables
+Running greedy tetris on instance 46 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 41.49s
+Running BruteForce on instance 47 with 12 variables
+Running greedy tetris on instance 47 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 31.02s
+Running BruteForce on instance 48 with 12 variables
+Running greedy tetris on instance 48 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 128.72s
+Running BruteForce on instance 49 with 12 variables
+Running greedy tetris on instance 49 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 5.7s
+Running BruteForce on instance 50 with 12 variables
+Running greedy tetris on instance 50 with 12 variables
+Any[]  Starting execution...
+  Execution completed in 16.15s
+    Processed 50/50
+  Cleaning up generated files...
+Job finished at Thu Jan 22 08:18:19 EST 2026

@@ -62,7 +62,8 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
-        ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor)
+        ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor),
+	ADAPT.Callbacks.Printer(:energy)
     ]
 
     # 7. Execution
