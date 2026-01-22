@@ -35,7 +35,7 @@ Main entry point for the scaling benchmark.
 """
 function run_scaling_benchmark()
     # 1. Configuration
-    qubit_counts = [6, 8, 10]
+    qubit_counts = [6, 8, 10, 12, 14, 15, 16]
     instances_per_type = 50
     base_seed = 2000
 
