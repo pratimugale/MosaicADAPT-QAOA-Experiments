@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+# 1. Force the C Compiler to use the loaded module
+export CC=gcc
+export CXX=g++
+
+# 2. Verify it worked (Both should now say 12.2.0)
+$CC --version
+$CXX --version
+
 # Configuration
 REPO_URL="https://github.com/pratimugale/TetrisADAPT.jl.git"
 DIR_NAME="TetrisADAPT.jl"
