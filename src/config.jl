@@ -13,9 +13,9 @@ Base.@kwdef struct TetrisConfig
     energy_floor::Float64 = -Inf # Stop if energy <= this value
 
     # ADAPT-VQE parameters
-    gradient_threshold::Float64 = 1e-8
-    score_stopper_threshold::Float64 = 1e-6
-    parameter_stopper_max::Int = 200
+    gradient_threshold::Float64 = 1e-3 # this is a filter - remove operators with gradient < this
+    score_stopper_threshold::Float64 = 1e-3 # this is a termination condition - stop if score < this
+    parameter_stopper_max::Int = 200 # maximum number of parameters to keep
 
     # Slow stopper (convergence check)
     slow_stopper_threshold::Float64 = 1e-3
@@ -23,7 +23,7 @@ Base.@kwdef struct TetrisConfig
     floor_stopper_threshold::Float64 = 0.05 # Threshold for FloorStopper
 
     # Optimizer
-    optimizer_tolerance::Float64 = 1e-6
+    optimizer_tolerance::Float64 = 1e-3
     optimizer_max_iterations::Int = 1000
 
     # Sampling
