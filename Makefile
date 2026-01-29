@@ -22,7 +22,7 @@ benchmark-floor:
 
 # Scaling benchmark (Time vs Qubits)
 benchmark-scaling:
-	julia --project=. experiments/benchmark_scaling.jl $(SEED) $(INSTANCES)
+	julia --project=. --threads=auto experiments/benchmark_scaling.jl $(SEED) $(INSTANCES)
 
 # Plot scaling results (finds latest json)
 plot-scaling:

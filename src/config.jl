@@ -15,7 +15,8 @@ Base.@kwdef struct TetrisConfig
     # ADAPT-VQE parameters
     gradient_threshold::Float64 = 1e-3 # this is a filter - remove operators with gradient < this
     score_stopper_threshold::Float64 = 1e-3 # this is a termination condition - stop if score < this
-    parameter_stopper_max::Int = 200 # maximum number of parameters to keep
+    parameter_stopper_max::Int = 1000 # maximum number of parameters to keep
+    layer_stopper_max::Int = 3 # maximum number of QAOA layers (p)
 
     # Slow stopper (convergence check)
     slow_stopper_threshold::Float64 = 1e-3

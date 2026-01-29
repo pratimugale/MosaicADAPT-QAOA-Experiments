@@ -47,6 +47,10 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
     # 5. Initial State (Superposition)
     ψ0 = ones(ComplexF64, 2^n_vars) / sqrt(2^n_vars) # normalized
 
+    # The normalization step looks redundant, but keeping it for now as it is in 
+    #  the other examples like https://github.com/KarunyaShirali/ADAPT.jl/blob/6fa330f6192eabb159acce8fd58a58ef76228232/test/qaoa_tetris.jl#L81 
+    ψ0 /= norm(ψ0)
+
     # 6. Setup ADAPT Algorithm
     adapt = ADAPT.TETRIS_ADAPT.TETRISADAPT(config.gradient_threshold)
 
@@ -58,9 +62,12 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
     trace = ADAPT.Trace()
 
     callbacks = [
-        ADAPT.Callbacks.Tracer(:energy, :selected_index, :selected_score, :sum_gradients),
+        ADAPT.Callbacks.Tracer(:energy, :selected_index, :selected_score, :sum_gradients, :callback_flagged),
+        ADAPT.Callbacks.ParameterTracer(),
+        ADAPT.Callbacks.Printer(:energy),
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
+        ADAPT.Callbacks.LayerStopper(config.layer_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
         ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor)
     ]
@@ -85,6 +92,11 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
         selected_indices = trace[:selected_index]
     end
 
+    callback_flagged = ""
+    if haskey(trace, :callback_flagged)
+        callback_flagged = trace[:callback_flagged]
+    end
+
     # 9. Final State Analysis & Sampling
     t_start_sampling = time()
     final_state = ADAPT.evolve_state(qaoa_ansatz, ψ0)
@@ -107,6 +119,7 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
         instance_id=instance_id,
         method="greedy",
         success=success,
+        callback_flagged=callback_flagged,
 
         # Timing
         total_runtime=t_total,

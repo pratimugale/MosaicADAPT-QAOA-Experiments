@@ -35,7 +35,7 @@ Main entry point for the scaling benchmark.
 """
 function run_scaling_benchmark()
     # 1. Configuration
-    qubit_counts = [6, 8, 10, 12, 14, 15, 16]
+    qubit_counts = [6, 8, 10, 12, 14, 15]
     instances_per_type = 50
     base_seed = 2000
 
@@ -58,16 +58,27 @@ function run_scaling_benchmark()
     println("N values: $qubit_counts")
     println("Instances per setting: $instances_per_type (Balanced) + $instances_per_type (Triangle)")
     println("Base Seed: $base_seed")
+    println("Using $(Base.Threads.nthreads()) threads for parallelization")
+
     println("Output: $output_file")
 
-    # Consolidated results
-    all_results = []
+    # Consolidated results container
+    final_results = Dict(
+        "timestamp" => timestamp,
+        "threads" => Base.Threads.nthreads(),
+        # We will populate config later, relying on the fact it's constant for the run
+        "config" => nothing,
+        "results" => []
+    )
+    
+    # Placeholder to capture config once
+    captured_config = nothing
 
     # 2. Main Loop Over N
     for n_vars in qubit_counts
         println("\n>>> Processing N = $n_vars <<<")
 
-        for type in ["balanced", "triangle"]
+        for type in ["balanced"] # ["balanced", "triangle"]
             println("\n  --- Generating $type dataset for N=$n_vars ---")
 
             current_seed = base_seed + (n_vars * 1000) + (type == "triangle" ? 500 : 0)
@@ -103,20 +114,19 @@ function run_scaling_benchmark()
                 instance = parse_cnf_file(cnf_path)
                 instance["instance_id"] = idx
 
-                # A. Run Brute Force
-                # Calculate timing
-                t_start_bf = time()
-                bf_result = run_bruteforce(instance)
-                t_bf = time() - t_start_bf
-
-                opt_energy = bf_result.approx_hamiltonian_energy
+                # Placeholders for skipped Brute Force
+                t_bf = NaN
+                opt_energy = NaN
+                bf_satisfaction = 0
+                bf_satisfaction_percent = 0.0
 
                 # B. Run Greedy Tetris
                 config = TetrisConfig(
                     adapt_type="greedy",
                     initial_gamma=0.01,
                     hamiltonian_type="approximate",
-                    num_shots=1000
+                    num_shots=1000,
+                    layer_stopper_max=3,
                 )
 
                 t_start_tetris = time()
@@ -136,13 +146,13 @@ function run_scaling_benchmark()
                     "n_vars" => n_vars,
                     "type" => type,
                     "instance_idx" => idx,
-                    "seed" => current_seed + idx - 1,
+                    "seed" => current_seed,
 
                     # Brute Force Stats
                     "time_bf" => t_bf,
                     "energy_bf" => opt_energy,
-                    "satisfaction_bf" => bf_result.best_satisfaction_count,
-                    "satisfaction_bf_percent" => bf_result.percent_satisfied_clauses,
+                    "satisfaction_bf" => bf_satisfaction,
+                    "satisfaction_bf_percent" => bf_satisfaction_percent,
 
                     # Tetris Stats
                     "time_tetris" => tetris_result.total_runtime,
@@ -151,10 +161,17 @@ function run_scaling_benchmark()
                     "layers" => tetris_result.num_adapt_layers,
                     "success" => tetris_result.success,
                     "hamiltonian_terms" => tetris_result.hamiltonian_terms,
-                    "satisfaction_tetris_percent" => tetris_result.percent_satisfied_clauses
+                    "satisfaction_tetris_percent" => tetris_result.percent_satisfied_clauses,
+                    "stop_reason" => tetris_result.callback_flagged
                 )
 
-                push!(all_results, res_entry)
+                push!(final_results["results"], res_entry)
+                
+                # Capture config if not done (assuming same config for all)
+                if captured_config === nothing
+                    captured_config = config
+                    final_results["config"] = config
+                end
 
                 # Print progress every 10
                 if idx % 10 == 0 || idx == length(experiment_files)
@@ -172,7 +189,7 @@ function run_scaling_benchmark()
 
         # Intermediate Save (optional, but good practice for long runs)
         open(output_file, "w") do f
-            JSON.print(f, all_results, 2)
+            JSON.print(f, final_results, 2)
         end
         println("  -> Saved intermediate results for N=$n_vars")
     end

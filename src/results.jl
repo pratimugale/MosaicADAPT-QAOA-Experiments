@@ -9,6 +9,7 @@ Base.@kwdef mutable struct TetrisResult
     instance_id::Int
     method::String
     success::Bool
+    callback_flagged::String = ""
 
     # Timing (seconds)
     total_runtime::Float64 = 0.0
