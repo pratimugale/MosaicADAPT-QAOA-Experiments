@@ -59,11 +59,11 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
 
     callbacks = [
         ADAPT.Callbacks.Tracer(:energy, :selected_index, :selected_score, :sum_gradients),
+	ADAPT.Callbacks.Printer(:energy),
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
-        ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor),
-	ADAPT.Callbacks.Printer(:energy)
+        ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor)
     ]
 
     # 7. Execution

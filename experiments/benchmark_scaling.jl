@@ -1,3 +1,4 @@
+
 import Pkg
 Pkg.activate(".")
 
@@ -35,8 +36,8 @@ Main entry point for the scaling benchmark.
 """
 function run_scaling_benchmark()
     # 1. Configuration
-    qubit_counts = [14, 15, 16]
-    instances_per_type = 25
+    qubit_counts = [15, 16]
+    instances_per_type = 50
     base_seed = 2000
 
     # Usage: julia script.jl [SEED] [INSTANCES_PER_TYPE]
@@ -59,6 +60,7 @@ function run_scaling_benchmark()
     println("Instances per setting: $instances_per_type (Balanced) + $instances_per_type (Triangle)")
     println("Base Seed: $base_seed")
     println("Output: $output_file")
+    flush(stdout)
 
     # Consolidated results
     all_results = []
@@ -103,13 +105,17 @@ function run_scaling_benchmark()
                 instance = parse_cnf_file(cnf_path)
                 instance["instance_id"] = idx
 
-                # A. Run Brute Force
-                # Calculate timing
-                t_start_bf = time()
-                bf_result = run_bruteforce(instance)
-                t_bf = time() - t_start_bf
+                # A. Run Brute Force (DISABLED)
+                # t_start_bf = time()
+                # bf_result = run_bruteforce(instance)
+                # t_bf = time() - t_start_bf
+                # opt_energy = bf_result.approx_hamiltonian_energy
 
-                opt_energy = bf_result.approx_hamiltonian_energy
+                # Placeholders for skipped Brute Force
+                t_bf = NaN
+                opt_energy = NaN
+                bf_satisfaction = 0
+                bf_satisfaction_percent = 0.0
 
                 # B. Run Greedy Tetris
                 config = TetrisConfig(
@@ -141,8 +147,8 @@ function run_scaling_benchmark()
                     # Brute Force Stats
                     "time_bf" => t_bf,
                     "energy_bf" => opt_energy,
-                    "satisfaction_bf" => bf_result.best_satisfaction_count,
-                    "satisfaction_bf_percent" => bf_result.percent_satisfied_clauses,
+                    "satisfaction_bf" => bf_satisfaction,
+                    "satisfaction_bf_percent" => bf_satisfaction_percent,
 
                     # Tetris Stats
                     "time_tetris" => tetris_result.total_runtime,
@@ -158,7 +164,8 @@ function run_scaling_benchmark()
 
                 # Print progress every 10
                 if idx % 10 == 0 || idx == length(experiment_files)
-                    print("\r    Processed $idx/$(length(experiment_files))")
+                    println("    Processed $idx/$(length(experiment_files))")
+                    flush(stdout)
                 end
             end
             println("") # newline
@@ -182,3 +189,4 @@ function run_scaling_benchmark()
 end
 
 run_scaling_benchmark()
+
