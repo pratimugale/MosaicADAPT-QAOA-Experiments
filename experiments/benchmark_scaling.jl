@@ -1,3 +1,4 @@
+
 import Pkg
 Pkg.activate(".")
 
@@ -61,6 +62,7 @@ function run_scaling_benchmark()
     println("Using $(Base.Threads.nthreads()) threads for parallelization")
 
     println("Output: $output_file")
+    flush(stdout)
 
     # Consolidated results container
     final_results = Dict(
@@ -113,6 +115,12 @@ function run_scaling_benchmark()
                 # Parse
                 instance = parse_cnf_file(cnf_path)
                 instance["instance_id"] = idx
+
+                # A. Run Brute Force (DISABLED)
+                # t_start_bf = time()
+                # bf_result = run_bruteforce(instance)
+                # t_bf = time() - t_start_bf
+                # opt_energy = bf_result.approx_hamiltonian_energy
 
                 # Placeholders for skipped Brute Force
                 t_bf = NaN
@@ -175,7 +183,8 @@ function run_scaling_benchmark()
 
                 # Print progress every 10
                 if idx % 10 == 0 || idx == length(experiment_files)
-                    print("\r    Processed $idx/$(length(experiment_files))")
+                    println("    Processed $idx/$(length(experiment_files))")
+                    flush(stdout)
                 end
             end
             println("") # newline
@@ -199,3 +208,4 @@ function run_scaling_benchmark()
 end
 
 run_scaling_benchmark()
+

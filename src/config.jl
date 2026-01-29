@@ -24,7 +24,7 @@ Base.@kwdef struct TetrisConfig
     floor_stopper_threshold::Float64 = 0.05 # Threshold for FloorStopper
 
     # Optimizer
-    optimizer_tolerance::Float64 = 1e-2
+    optimizer_tolerance::Float64 = 1e-6
     optimizer_max_iterations::Int = 100
 
     # Sampling
