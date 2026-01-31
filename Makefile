@@ -32,4 +32,8 @@ plot-scaling:
 test:
 	julia --project=. test/runtests.jl
 
-.PHONY: dp install update-tetris install-python-deps init-julia-project generate-dataset test-determinism experiment benchmark-floor benchmark-scaling plot-scaling test
+# Run RC2 solver test
+test-rc2:
+	./venv/bin/python3 src/exact_solvers/test_rc2.py
+
+.PHONY: dp install update-tetris install-python-deps init-julia-project generate-dataset test-determinism experiment benchmark-floor benchmark-scaling plot-scaling test test-rc2
