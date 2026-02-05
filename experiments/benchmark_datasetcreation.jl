@@ -1,4 +1,8 @@
 
+# Set environment variables for single-threaded execution BEFORE loading packages
+ENV["JULIA_NUM_THREADS"] = "1"
+ENV["OPENBLAS_NUM_THREADS"] = "1"
+
 import Pkg
 Pkg.activate(".")
 
