@@ -28,4 +28,7 @@ LocalPreferences.toml
 JuliaLocalPreferences.toml
 
 results/
-./dataset/
+./dataset/**/**
+
+# Python related
+*.pyc

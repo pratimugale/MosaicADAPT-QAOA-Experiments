@@ -29,11 +29,20 @@ Base.@kwdef mutable struct TetrisResult
     num_adapt_layers::Int = 0
     num_iterations::Int = 0
     selected_indices::Vector{Any} = Any[] # Can be Int or Vector{Int} depending on pool
+    selected_scores::Any = []
+
+    # Ansatz Structure
+    gamma_values::Vector{Float64} = Float64[]
+    beta_values::Vector{Float64} = Float64[]
 
     # Sampling results
     sampled_expected_satisfaction::Float64
     sampled_best_satisfaction::Int
     sampled_best_solution::Vector{Bool}
+
+    # Tracking History
+    adaptation_energies::Vector{Float64} = Float64[]
+    parameter_trace::Any = []
 end
 
 """

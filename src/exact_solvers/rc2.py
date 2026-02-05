@@ -25,31 +25,33 @@ def solve_rc2(instance_path: str) -> tuple[list[list[int]], int]:
         wcnf.append(clause, weight=1)
 
     # 3. Use the RC2 solver
-    with RC2(wcnf) as rc2:
-        # Standard enumerate() in RC2 might return all models (even suboptimal).
-        # To strictly enumerate OPTIMAL models, we use a blocking clause strategy.
-        
-        models = []
+
+    rc2 = RC2(wcnf)
+    
+    # Find all optimal solutions
+    models = []
+    optimal_cost = None
+    
+    # Loop to find multiple optimal solutions
+    while True:
         model = rc2.compute()
         
-        # If no solution found at all (shouldn't pass without hard clauses)
-        if not model:
-            raise RuntimeError("RC2 could not find a solution.")
-
-        min_cost = rc2.cost
+        if model is None:
+            break
+            
+        cost = rc2.cost
         
-        while model is not None:
-             # Stop if we drifted into higher cost solutions
-             if rc2.cost > min_cost:
-                 break
-                 
-             models.append(model)
-             
-             # Add a hard clause blocking this specific assignment
-             # To block assignment M, we add clause: OR(literals opposite to M)
-             rc2.add_clause([-l for l in model])
-             
-             model = rc2.compute()
-             
-        return models, min_cost
+        if optimal_cost is None:
+            optimal_cost = cost
+        elif cost > optimal_cost:
+            break
+            
+        # IMPORTANT: Store a COPY of the model, as pysat reuses the reference
+        models.append(list(model))
+        
+        # Block this solution to find others
+        rc2.add_clause([-l for l in model])
+        
+    return models, optimal_cost
+        
 

@@ -1,4 +1,4 @@
-# Run tetris adapt on Max3SAT dataset
+# Run generic tetris adapt on Max3SAT dataset
 import ADAPT
 import PauliOperators: ScaledPauliVector, Pauli, PauliSum, ScaledPauli
 import ADAPT.ADAPT_QAOA: QAOAObservable
@@ -6,25 +6,32 @@ import Statistics: mean
 import LinearAlgebra: norm
 
 """
-    run_greedy_tetris(config::TetrisConfig, instance::Dict)
+    run_tetris(config::TetrisConfig, instance::Dict;
+               pool_type::String="qaoa_double_pool",
+               use_kamis::Bool=false,
+               percent_tail_ends_removed::Float64=0.0,
+               gurobi_energy::Float64=NaN)
 
-Runs the Greedy Tetris ADAPT algorithm on a single Max-3-SAT instance.
-Returns a dictionary containing the results.
+Runs the TETRIS ADAPT algorithm (Greedy or KaMIS) on a single Max-3-SAT instance.
+Returns a TetrisResult struct.
 """
-function run_greedy_tetris(config::TetrisConfig, instance::Dict)
+function run_tetris(config::TetrisConfig, instance::Dict;
+                    pool_type::String="qaoa_double_pool",
+                    use_kamis::Bool=false,
+                    percent_tail_ends_removed::Float64=0.0,
+                    gurobi_energy::Float64=NaN)
     t_start_total = time()
 
     # Extract instance details
     instance_id = instance["instance_id"]
     n_vars = instance["variables"]
-    println("Running greedy tetris on instance $instance_id with $(n_vars) variables")
+    method_name = use_kamis ? "kamis" : "greedy"
+    println("Running TETRIS ($method_name, pool=$pool_type) on instance $instance_id with $(n_vars) variables")
 
     # 1. Parse Formula
-    formula = get_formula_as_struct(instance["formula"])
+    formula = MIS_TETRIS_ADAPT.get_formula_as_struct(instance["formula"])
 
-    # 2. Results container (now just using variables effectively)
-
-    # 3. Construct Hamiltonian
+    # 2. Construct Hamiltonian
     t_start_ham = time()
     if config.hamiltonian_type == "exact"
         H_spv_vector = ADAPT.Hamiltonians.Max3SAT.get_exact_hamiltonian(formula, n_vars)
@@ -38,9 +45,22 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
     # Wrap in QAOAObservable
     H = ADAPT.ADAPT_QAOA.QAOAObservable(H_spv_vector)
 
-    # 4. Create Ansatz & Pool
+    # 3. Create Pool
+    local pool
+    if pool_type == "qaoa_double_pool"
+        pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_double_pool(n_vars)
+    elseif pool_type == "qaoa_nondiagonal_double_pool"
+        # We need to access this maybe from a different module if it's not exported by default
+        # Assuming it is available in QAOApools or we might need to implement it/import it
+        # Based on previous context, user implied it exists. 
+        # If it throws, we check ADAPT structure.
+        pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_nondiagonal_double_pool(n_vars)
+    else
+        error("Unknown pool_type: $pool_type")
+    end
+
+    # 4. Create Ansatz
     t_start_ansatz = time()
-    pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_double_pool(n_vars)
     qaoa_ansatz = ADAPT.ADAPT_QAOA.TetrisQAOAAnsatz(config.initial_gamma, pool, H)
     t_ansatz = time() - t_start_ansatz
 
@@ -51,8 +71,17 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
     #  the other examples like https://github.com/KarunyaShirali/ADAPT.jl/blob/6fa330f6192eabb159acce8fd58a58ef76228232/test/qaoa_tetris.jl#L81 
     ψ0 /= norm(ψ0)
 
-    # 6. Setup ADAPT Algorithm
-    adapt = ADAPT.TETRIS_ADAPT.TETRISADAPT(config.gradient_threshold)
+    # 6. Setup ADAPT Algorithm with KaMIS support
+    # Derive a seed from instance ID for reproducibility (if using Random in KaMIS)
+    # But KaMIS seed is passed via config usually. Here we pass distinct seed per instance/run
+    current_seed = 2000 + instance_id # Simple derivation
+    
+    adapt = ADAPT.TETRIS_ADAPT.TETRISADAPT(
+        config.gradient_threshold;
+        use_kamis = use_kamis,
+        kamis_seed = current_seed,
+        percent_tail_ends_removed = percent_tail_ends_removed
+    )
 
     vqe = ADAPT.OptimOptimizer(:BFGS;
         g_tol=config.optimizer_tolerance,
@@ -61,25 +90,35 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
 
     trace = ADAPT.Trace()
 
-    callbacks = [
+    # 7. Configure Callbacks (Stoppers)
+    callbacks = ADAPT.AbstractCallback[
         ADAPT.Callbacks.Tracer(:energy, :selected_index, :selected_score, :sum_gradients, :callback_flagged),
         ADAPT.Callbacks.ParameterTracer(),
         ADAPT.Callbacks.Printer(:energy),
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
-        ADAPT.Callbacks.LayerStopper(config.layer_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
-        ADAPT.Callbacks.FloorStopper(config.floor_stopper_threshold, config.energy_floor)
+        ADAPT.Callbacks.LayerStopper(2 * n_vars),
     ]
 
-    # 7. Execution
+    # Floor Stopper (Gurobi based)
+    if !isnan(gurobi_energy)
+        # Stop if we are within 1% of the ground truth (Gurobi) OR within 0.01 absolute error
+        # Note: Gurobi returns minimum energy (positive or zero or negative). 
+        # We want abs(E_current - E_gurobi) < threshold.
+        # Ensure a minimum threshold of 0.01 so 0.0 floor doesn't require infinite precision.
+        floor_threshold = max(0.01, abs(0.01 * gurobi_energy))
+        push!(callbacks, ADAPT.Callbacks.FloorStopper(floor_threshold, gurobi_energy))
+    end
+
+    # 8. Execution
     println("  Starting execution...")
     t_start_adapt = time()
     success = ADAPT.run!(qaoa_ansatz, trace, adapt, vqe, pool, H, ψ0, callbacks)
     t_adapt = time() - t_start_adapt
     println("  Execution completed in $(round(t_adapt, digits=2))s")
 
-    # 8. Extract Trace Data
+    # 9. Extract Results
     final_energy = 0.0
     n_steps = 0
     if haskey(trace, :energy) && !isempty(trace[:energy])
@@ -87,44 +126,21 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
         n_steps = length(trace[:energy])
     end
 
-    selected_indices = Any[]
-    if haskey(trace, :selected_index)
-        selected_indices = trace[:selected_index]
-    end
-    
-    selected_scores = Float64[]
-    if haskey(trace, :selected_score)
-        selected_scores = trace[:selected_score]
-    end
+    selected_indices = get(trace, :selected_index, Any[])
+    selected_scores = get(trace, :selected_score, Float64[])
+    callback_flagged = get(trace, :callback_flagged, "")
+    parameter_trace = get(trace, :parameters, Any[])
 
-    callback_flagged = ""
-    if haskey(trace, :callback_flagged)
-        callback_flagged = trace[:callback_flagged]
-    end
-
-    # Extract adaptation energies (energies just before adaptation)
+    # Adaptation Energies
     adaptation_energies = Float64[]
     if haskey(trace, :energy) && haskey(trace, :adaptation)
-        # trace[:adaptation] contains indices in trace[:energy] where adaptations happen
-        # We skip the first one usually (start) if desired, but user said 2:end
-        # "energies = trace[:energy][trace[:adaptation][2:end]]"
         adapt_indices = trace[:adaptation]
         if length(adapt_indices) > 1
-            # User logic: 2:end
-            relevant_indices = adapt_indices[2:end]
-            # Ensure indices are within bounds of energy vector
-            valid_indices = filter(i -> i <= length(trace[:energy]), relevant_indices)
-            adaptation_energies = trace[:energy][valid_indices]
+            adaptation_energies = trace[:energy][trace[:adaptation][2:end]]
         end
     end
 
-    # Extract Parameter Trace
-    parameter_trace = Any[]
-    if haskey(trace, :parameters)
-        parameter_trace = trace[:parameters]
-    end
-
-    # 9. Final State Analysis & Sampling
+    # 10. Final Sampling
     t_start_sampling = time()
     final_state = ADAPT.evolve_state(qaoa_ansatz, ψ0)
 
@@ -132,28 +148,30 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
     samples_bitmatrix = ADAPT.sample_from_state(final_state, config.num_shots)
     # Convert BitMatrix (n_qubits x n_samples) to Vector{Vector{Bool}}
     sampled_bitstrings = [Vector{Bool}(samples_bitmatrix[:, i]) for i in 1:size(samples_bitmatrix, 2)]
-
-    sampled_satisfactions = [get_number_of_satisfied_clauses(bs, formula) for bs in sampled_bitstrings]
-
+    sampled_satisfactions = [MIS_TETRIS_ADAPT.get_number_of_satisfied_clauses(bs, formula) for bs in sampled_bitstrings]
+    
     sampled_expected_satisfaction = mean(sampled_satisfactions)
-    best_bs, best_sat = get_best_bitstring_among_sampled_bitstrings(sampled_bitstrings, formula)
+    best_bs, best_sat = MIS_TETRIS_ADAPT.get_best_bitstring_among_sampled_bitstrings(sampled_bitstrings, formula)
     t_sampling = time() - t_start_sampling
-
     t_total = time() - t_start_total
+    
+    # Calculate satisfied percentage
+    percent_satisfied = 0.0
+    if length(formula) > 0
+        percent_satisfied = sampled_expected_satisfaction / length(formula)
+    end
 
-    # Return Result Struct
     return TetrisResult(
         instance_id=instance_id,
-        method="greedy",
+        method=method_name, # "greedy" or "kamis"
         success=success,
         callback_flagged=callback_flagged,
-
-        # Timing
         total_runtime=t_total,
         hamiltonian_construction_time=t_ham,
         ansatz_creation_time=t_ansatz,
         adapt_runtime=t_adapt,
-        sampling_time=t_sampling, final_energy=final_energy,
+        sampling_time=t_sampling, 
+        final_energy=final_energy,
         hamiltonian_terms=length(H_spv_vector),
         num_adapt_layers=length(qaoa_ansatz.γ_layers),
         num_iterations=n_steps,
@@ -165,6 +183,7 @@ function run_greedy_tetris(config::TetrisConfig, instance::Dict)
         sampled_best_satisfaction=best_sat,
         sampled_best_solution=best_bs,
         adaptation_energies=adaptation_energies,
-        parameter_trace=parameter_trace
+        parameter_trace=parameter_trace,
+        percent_satisfied_clauses=percent_satisfied
     )
 end

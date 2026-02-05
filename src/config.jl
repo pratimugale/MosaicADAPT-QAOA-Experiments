@@ -16,6 +16,7 @@ Base.@kwdef struct TetrisConfig
     gradient_threshold::Float64 = 1e-8
     score_stopper_threshold::Float64 = 1e-6
     parameter_stopper_max::Int = 200
+    layer_stopper_max::Int = 100
 
     # Slow stopper (convergence check)
     slow_stopper_threshold::Float64 = 1e-3

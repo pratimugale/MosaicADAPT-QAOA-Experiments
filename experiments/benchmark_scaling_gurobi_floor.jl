@@ -5,12 +5,17 @@ Pkg.activate(".")
 import JSON
 import Dates
 import Random
+using Printf
 
 # Include project modules
 include(joinpath(@__DIR__, "..", "src", "MIS_TETRIS_ADAPT.jl"))
 import .MIS_TETRIS_ADAPT: TetrisConfig, BenchmarkResult, BruteForceResult, TetrisResult
 import .MIS_TETRIS_ADAPT: run_greedy_tetris, run_bruteforce, parse_cnf_file
+import ADAPT
 
+# Include Gurobi Solver
+include(joinpath(@__DIR__, "..", "src", "exact_solvers", "gurobi_solver.jl"))
+using .GurobiSolver
 
 """
     generate_scaling_dataset(n_vars::Int, type::String, num_instances::Int; seed::Int=2000)
@@ -22,19 +27,32 @@ function generate_scaling_dataset(n_vars::Int, type::String, num_instances::Int;
     python_script = joinpath(@__DIR__, "..", "src", "dataset", "satqubolib_max3sat.py")
     venv_python = joinpath(@__DIR__, "..", "venv", "bin", "python3")
 
-    ratio = 4.24
+    base_ratio = 3.6
+    
+    # Seed the RNG for reproducibility of the ratio variations
+    Random.seed!(seed)
 
-    cmd = `$venv_python $python_script $n_vars $ratio $num_instances --seed $seed --type $type`
-
-    run(cmd)
+    # We must loop to randomize ratio per instance
+    for i in 0:(num_instances-1)
+        # Randomize ratio +/- 20%
+        # rand() gives [0, 1). We want [-0.2, 0.2].
+        variation = (rand() * 0.4) - 0.2
+        instance_ratio = base_ratio * (1.0 + variation)
+        
+        current_seed = seed + i
+        
+        # Call for SINGLE instance with specific ratio
+        cmd = `$venv_python $python_script $n_vars $instance_ratio 1 --seed $current_seed --type $type`
+        run(cmd)
+    end
 end
 
 """
-    run_scaling_benchmark()
+    run_scaling_benchmark_gurobi_floor()
 
-Main entry point for the scaling benchmark.
+Main entry point for the scaling benchmark with Gurobi floor stopper.
 """
-function run_scaling_benchmark()
+function run_scaling_benchmark_gurobi_floor()
     # 1. Configuration
     qubit_counts = [6, 8, 10]
     instances_per_type = 50
@@ -53,9 +71,9 @@ function run_scaling_benchmark()
     if !isdir(results_dir)
         mkdir(results_dir)
     end
-    output_file = joinpath(results_dir, "benchmark_scaling_$(timestamp).json")
+    output_file = joinpath(results_dir, "benchmark_scaling_gurobi_floor_$(timestamp).json")
 
-    println("=== Starting Scaling Benchmark ===")
+    println("=== Starting Scaling Benchmark (Gurobi Floor) ===")
     println("N values: $qubit_counts")
     println("Instances per setting: $instances_per_type (Balanced) + $instances_per_type (Triangle)")
     println("Base Seed: $base_seed")
@@ -68,7 +86,6 @@ function run_scaling_benchmark()
     final_results = Dict(
         "timestamp" => timestamp,
         "threads" => Base.Threads.nthreads(),
-        # We will populate config later, relying on the fact it's constant for the run
         "config" => nothing,
         "results" => []
     )
@@ -95,7 +112,8 @@ function run_scaling_benchmark()
 
             # Find the specific files we just generated
             all_files = readdir(dataset_dir)
-            target_files = filter(f -> endswith(f, ".cnf"), all_files)
+            # Strict filtering: Must match seed AND N_vars to avoid cross-contamination
+            target_files = filter(f -> endswith(f, ".cnf") && occursin("sat_$(n_vars)_vars", f), all_files)
 
             # Use specific seed-based filtering to be precise
             experiment_files = String[]
@@ -115,26 +133,26 @@ function run_scaling_benchmark()
                 # Parse
                 instance = parse_cnf_file(cnf_path)
                 instance["instance_id"] = idx
+                formula = MIS_TETRIS_ADAPT.get_formula_as_struct(instance["formula"])
 
-                # A. Run Brute Force (DISABLED)
-                # t_start_bf = time()
-                # bf_result = run_bruteforce(instance)
-                # t_bf = time() - t_start_bf
-                # opt_energy = bf_result.approx_hamiltonian_energy
-
-                # Placeholders for skipped Brute Force
-                t_bf = NaN
-                opt_energy = NaN
-                bf_satisfaction = 0
-                bf_satisfaction_percent = 0.0
-
-                # B. Run Greedy Tetris
+                # --- 1. Compute Gurobi Floor ---
+                 # Get Approximate Hamiltonian (same as used by Tetris)
+                H_approx = ADAPT.Hamiltonians.Max3SAT.get_approximate_hamiltonian(formula, n_vars)
+                
+                # Solve using Gurobi
+                Q, offset = pauli_to_qubo(H_approx, n_vars)
+                gurobi_energy, _ = solve_qubo_gurobi(Q, offset)
+                
+                # --- 2. Run Greedy Tetris ---
                 config = TetrisConfig(
                     adapt_type="greedy",
                     initial_gamma=0.01,
-                    hamiltonian_type="exact",
+                    hamiltonian_type="approximate",
                     num_shots=1000,
-                    layer_stopper_max=10,
+                    layer_stopper_max=n_vars*2,
+                    energy_floor=gurobi_energy, # Set the floor!
+                    floor_stopper_threshold=abs(0.01*gurobi_energy), # Stop if within 10% of floor
+                    optimizer_tolerance=1e-3
                 )
 
                 t_start_tetris = time()
@@ -156,37 +174,42 @@ function run_scaling_benchmark()
                     "instance_idx" => idx,
                     "seed" => current_seed,
 
-                    # Brute Force Stats
-                    "time_bf" => t_bf,
-                    "energy_bf" => opt_energy,
-                    "satisfaction_bf" => bf_satisfaction,
-                    "satisfaction_bf_percent" => bf_satisfaction_percent,
+                    # Gurobi Baseline
+                    "energy_floor_gurobi" => gurobi_energy,
 
                     # Tetris Stats
                     "time_tetris" => tetris_result.total_runtime,
                     "energy_tetris" => tetris_result.final_energy,
+                    "energy_diff_vs_gurobi" => tetris_result.final_energy - gurobi_energy,
                     "iterations" => tetris_result.num_iterations,
                     "layers" => tetris_result.num_adapt_layers,
                     "success" => tetris_result.success,
                     "hamiltonian_terms" => tetris_result.hamiltonian_terms,
                     "satisfaction_tetris_percent" => tetris_result.percent_satisfied_clauses,
                     "stop_reason" => tetris_result.callback_flagged,
-                    "adaptation_energies" => tetris_result.adaptation_energies,
-                    "parameter_trace" => tetris_result.parameter_trace,
-                    
-                    # New Metadata for Debugging
-                    "selected_indices" => tetris_result.selected_indices,
-                    "selected_scores" => tetris_result.selected_scores,
-                    "gamma_values" => tetris_result.gamma_values,
-                    "beta_values" => tetris_result.beta_values
+                    "adaptation_energies" => tetris_result.adaptation_energies
                 )
 
                 push!(final_results["results"], res_entry)
                 
-                # Capture config if not done (assuming same config for all)
+                # Capture config if not done
                 if captured_config === nothing
                     captured_config = config
-                    final_results["config"] = config
+                    # Create descriptive config for the report
+                    final_results["config"] = Dict(
+                        "adapt_type" => config.adapt_type,
+                        "initial_gamma" => config.initial_gamma,
+                        "hamiltonian_type" => config.hamiltonian_type,
+                        "num_shots" => config.num_shots,
+                        "optimizer_tolerance" => config.optimizer_tolerance,
+                        "optimizer_max_iterations" => config.optimizer_max_iterations,
+                        
+                        # Descriptive fields requested by user
+                        "clause_randomness" => "+/- 20% of (3.6 * N)",
+                        "floor_stopper_logic" => "1% of Gurobi Energy (abs(0.01 * E_gurobi))",
+                        "energy_floor" => "Instance Specific (Gurobi)",
+                        "layer_limit" => "2 * N"
+                    )
                 end
 
                 # Print progress every 10
@@ -211,9 +234,8 @@ function run_scaling_benchmark()
         println("  -> Saved intermediate results for N=$n_vars")
     end
 
-    println("\n=== Scaling Benchmark Complete ===")
+    println("\n=== Scaling Benchmark (Gurobi Floor) Complete ===")
     println("Results saved to $output_file")
 end
 
-run_scaling_benchmark()
-
+run_scaling_benchmark_gurobi_floor()

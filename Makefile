@@ -1,5 +1,7 @@
 # Variables
 VENV_DIR = venv
+SEED ?= 2000
+INSTANCES ?= 50
 
 # Main entry point
 install:
@@ -40,4 +42,12 @@ test:
 test-rc2:
 	./venv/bin/python3 src/exact_solvers/test_rc2.py
 
-.PHONY: dp install update-tetris install-python-deps init-julia-project generate-dataset test-determinism experiment benchmark-floor benchmark-scaling plot-scaling test test-rc2
+# Scaling benchmark (Gurobi Floor Stopper)
+benchmark-gurobi-floor:
+	julia --project=. experiments/benchmark_scaling_gurobi_floor.jl $(SEED) $(INSTANCES)
+
+# Scaling benchmark (Exact Hamiltonian)
+benchmark-scaling-exact-hamiltonian:
+	julia --project=. experiments/benchmark_scaling_exact_hamiltonian.jl $(SEED) $(INSTANCES)
+
+.PHONY: dp install update-tetris install-python-deps init-julia-project generate-dataset test-determinism experiment benchmark-floor benchmark-scaling benchmark-gurobi-floor plot-scaling test test-rc2
