@@ -9,6 +9,7 @@ import Dates
 import Random
 using Printf
 using PyCall
+using LinearAlgebra
 
 # Include project modules
 include(joinpath(@__DIR__, "..", "src", "MIS_TETRIS_ADAPT.jl"))
@@ -87,6 +88,8 @@ function run_comprehensive_benchmark()
     println("Instances per setting: $instances_per_type (Balanced and No-Triangle)")
     println("Seed: $seed")
     println("Using $(Base.Threads.nthreads()) threads")
+    BLAS.set_num_threads(1)
+    println("BLAS threads: $(BLAS.get_num_threads())")
     println("Output: $output_file")
     flush(stdout)
 
