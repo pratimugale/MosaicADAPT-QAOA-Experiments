@@ -4,9 +4,6 @@
 Configuration for Tetris-ADAPT experiments.
 """
 Base.@kwdef struct TetrisConfig
-    # Method ("greedy" or "mis")
-    adapt_type::String = "greedy"
-
     # Physics parameters
     initial_gamma::Float64 = 0.01
     hamiltonian_type::String = "approximate" # "exact" or "approximate"
@@ -17,6 +14,10 @@ Base.@kwdef struct TetrisConfig
     score_stopper_threshold::Float64 = 1e-6
     parameter_stopper_max::Int = 200
     layer_stopper_max::Int = 100
+
+    # KaMIS Parameters
+    use_kamis::Bool = false
+    kamis_seed::Int = 42
 
     # Slow stopper (convergence check)
     slow_stopper_threshold::Float64 = 1e-3

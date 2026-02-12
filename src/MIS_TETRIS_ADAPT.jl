@@ -11,9 +11,14 @@ include("results.jl")
 
 # Utilities
 include("utils/max3sat.jl")
+include("utils/callbacks.jl")
+
+# Exact Solvers
+include("exact_solvers/utils.jl")
+include("exact_solvers/gurobi_exact_hamiltonian.jl")
 
 # Include Runners
 include("qaoa/greedy_tetris.jl")
 include("bruteforce/bruteforce.jl")
-
+include("qaoa/run_layerstopped_tetris.jl")
 end # module MIS_TETRIS_ADAPT

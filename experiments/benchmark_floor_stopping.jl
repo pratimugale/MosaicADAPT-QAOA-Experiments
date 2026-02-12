@@ -98,7 +98,6 @@ function run_benchmark_experiment()
 
         # Configure Tetris with the found floor
         config = TetrisConfig(
-            adapt_type="greedy",
             initial_gamma=0.01,
             hamiltonian_type="approximate",
             num_shots=1000,

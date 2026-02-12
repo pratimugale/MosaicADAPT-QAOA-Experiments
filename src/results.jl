@@ -43,6 +43,10 @@ Base.@kwdef mutable struct TetrisResult
     # Tracking History
     adaptation_energies::Vector{Float64} = Float64[]
     parameter_trace::Any = []
+
+    # Analysis
+    first_layer_gradient_sum::Float64 = 0.0
+    clause_satisfaction_percent_trace::Vector{Float64} = Float64[]
 end
 
 """

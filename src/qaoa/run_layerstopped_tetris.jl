@@ -1,4 +1,6 @@
 # Run generic tetris adapt on Max3SAT dataset
+# This file does not use a floor stopper. In real world use-cases, the ground truth energy is unknown.
+
 import ADAPT
 import PauliOperators: ScaledPauliVector, Pauli, PauliSum, ScaledPauli
 import ADAPT.ADAPT_QAOA: QAOAObservable
@@ -6,25 +8,27 @@ import Statistics: mean
 import LinearAlgebra: norm
 
 """
-    run_tetris(config::TetrisConfig, instance::Dict;
+    run_layerstopped_tetris(config::TetrisConfig, instance::Dict;
                pool_type::String="qaoa_double_pool",
                use_kamis::Bool=false,
-               percent_tail_ends_removed::Float64=0.0
+               percent_tail_ends_removed::Float64=0.0,
+               floor_energy::Float64=NaN)
 
 Runs the TETRIS ADAPT algorithm (Greedy or KaMIS) on a single Max-3-SAT instance.
 Returns a TetrisResult struct.
 """
-function run_tetris(config::TetrisConfig, instance::Dict;
-    pool_type::String="qaoa_double_pool",
-    use_kamis::Bool=false,
-    percent_tail_ends_removed::Float64=0.0)
+function run_layerstopped_tetris(config::TetrisConfig, instance::Dict;
+                    pool_type::String="qaoa_double_pool",
+                    use_kamis::Bool=false,
+                    percent_tail_ends_removed::Float64=0.0,
+                    floor_energy::Float64=NaN)
     t_start_total = time()
 
     # Extract instance details
     instance_id = instance["instance_id"]
     n_vars = instance["variables"]
     method_name = use_kamis ? "kamis" : "greedy"
-    @info("Running TETRIS ($method_name, pool=$pool_type) on instance $instance_id with $(n_vars) variables")
+    println("Running TETRIS ($method_name, pool=$pool_type) on instance $instance_id with $(n_vars) variables")
 
     # 1. Parse Formula
     formula = MIS_TETRIS_ADAPT.get_formula_as_struct(instance["formula"])
@@ -48,6 +52,10 @@ function run_tetris(config::TetrisConfig, instance::Dict;
     if pool_type == "qaoa_double_pool"
         pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_double_pool(n_vars)
     elseif pool_type == "qaoa_nondiagonal_double_pool"
+        # We need to access this maybe from a different module if it's not exported by default
+        # Assuming it is available in QAOApools or we might need to implement it/import it
+        # Based on previous context, user implied it exists. 
+        # If it throws, we check ADAPT structure.
         pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_nondiagonal_double_pool(n_vars)
     else
         error("Unknown pool_type: $pool_type")
@@ -68,9 +76,9 @@ function run_tetris(config::TetrisConfig, instance::Dict;
     # 6. Setup ADAPT Algorithm with KaMIS support
     adapt = ADAPT.TETRIS_ADAPT.TETRISADAPT(
         config.gradient_threshold;
-        use_kamis=use_kamis,
-        kamis_seed=42,
-        percent_tail_ends_removed=percent_tail_ends_removed
+        use_kamis = use_kamis,
+        kamis_seed = 42, # TODO: should we change this later?
+        percent_tail_ends_removed = percent_tail_ends_removed
     )
 
     vqe = ADAPT.OptimOptimizer(:BFGS;
@@ -88,30 +96,15 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
-        ADAPT.Callbacks.LayerStopper(2 * n_vars),
-        ClauseSatisfactionTracer(formula, n_vars),
+        ADAPT.Callbacks.LayerStopper(config.layer_stopper_max), 
     ]
 
-    # Floor Stopper
-    if !isnan(config.energy_floor)
-        # In the case of the exact hamiltonian, and in some cases of the approximat hamiltonian, 
-        # the energy floor could be 0. We thus clamp it to a minimum of 0.01.
-        # Also, the threshold needs to be an absolute value.
-        # floor_threshold = max(0.01, abs(0.01 * config.energy_floor))
-        # TODO: for now using a fixed threshold of 0.01, because this will make it a bit more fair to 
-        # compare the results of the exact and approximate hamiltonians.
-        floor_threshold = 0.01
-        @info "Energy floor found by Gurobi solver: $(config.energy_floor)"
-        @info "Using floor threshold: $(floor_threshold)"
-        push!(callbacks, ADAPT.Callbacks.FloorStopper(floor_threshold, config.energy_floor))
-    end
-
     # 8. Execution
-    @info("  Starting execution...")
+    println("  Starting execution...")
     t_start_adapt = time()
     success = ADAPT.run!(qaoa_ansatz, trace, adapt, vqe, pool, H, ψ0, callbacks)
     t_adapt = time() - t_start_adapt
-    @info("  Execution completed in $(round(t_adapt, digits=2))s")
+    println("  Execution completed in $(round(t_adapt, digits=2))s")
 
     # 9. Extract Results
     final_energy = 0.0
@@ -140,9 +133,6 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         first_layer_gradient_sum = trace[:sum_gradients][1]
     end
 
-    clause_satisfaction_trace = Float64.(get(trace, :satisfiedclauses, Float64[]))
-    clause_satisfaction_percent_trace = clause_satisfaction_trace ./ length(formula)
-
     # 10. Final Sampling
     t_start_sampling = time()
     final_state = ADAPT.evolve_state(qaoa_ansatz, ψ0)
@@ -152,12 +142,12 @@ function run_tetris(config::TetrisConfig, instance::Dict;
     # Convert BitMatrix (n_qubits x n_samples) to Vector{Vector{Bool}}
     sampled_bitstrings = [Vector{Bool}(samples_bitmatrix[:, i]) for i in 1:size(samples_bitmatrix, 2)]
     sampled_satisfactions = [MIS_TETRIS_ADAPT.get_number_of_satisfied_clauses(bs, formula) for bs in sampled_bitstrings]
-
+    
     sampled_expected_satisfaction = mean(sampled_satisfactions)
     best_bs, best_sat = MIS_TETRIS_ADAPT.get_best_bitstring_among_sampled_bitstrings(sampled_bitstrings, formula)
     t_sampling = time() - t_start_sampling
     t_total = time() - t_start_total
-
+    
     # Calculate satisfied percentage
     percent_satisfied = 0.0
     if length(formula) > 0
@@ -173,7 +163,7 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         hamiltonian_construction_time=t_ham,
         ansatz_creation_time=t_ansatz,
         adapt_runtime=t_adapt,
-        sampling_time=t_sampling,
+        sampling_time=t_sampling, 
         final_energy=final_energy,
         hamiltonian_terms=length(H_spv_vector),
         num_adapt_layers=length(qaoa_ansatz.γ_layers),
@@ -188,7 +178,6 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         adaptation_energies=adaptation_energies,
         parameter_trace=parameter_trace,
         percent_satisfied_clauses=percent_satisfied,
-        first_layer_gradient_sum=first_layer_gradient_sum,
-        clause_satisfaction_percent_trace=clause_satisfaction_percent_trace
+        first_layer_gradient_sum=first_layer_gradient_sum
     )
 end

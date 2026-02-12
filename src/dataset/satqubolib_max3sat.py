@@ -90,7 +90,7 @@ def main():
         num_clauses = int(num_nodes * 4.3)  # Default clause-to-variable ratio
         
         # Create output directory
-        output_dir = Path(f"dataset/satqubolib/notrianglesat/{num_nodes}nodes")
+        output_dir = Path("dataset/satqubolib/notrianglesat")
         output_dir.mkdir(parents=True, exist_ok=True)
         
         seed_info = f" (seed: {seed})" if seed is not None else " (random seed)"
@@ -113,14 +113,14 @@ def main():
             # 4. Save the output to a .cnf file
             if num_instances == 1:
                 if seed is not None:
-                    output_filename = f"sat_{num_nodes}_nodes_seed{seed}.cnf"
+                    output_filename = f"sat_{num_nodes}_vars_seed{seed}.cnf"
                 else:
-                    output_filename = f"sat_{num_nodes}_nodes.cnf"
+                    output_filename = f"sat_{num_nodes}_vars.cnf"
             else:
                 if seed is not None:
-                    output_filename = f"sat_{num_nodes}_nodes_seed{instance_seed}.cnf"
+                    output_filename = f"sat_{num_nodes}_vars_seed{instance_seed}.cnf"
                 else:
-                    output_filename = f"sat_{num_nodes}_nodes_{i+1}.cnf"
+                    output_filename = f"sat_{num_nodes}_vars_{i+1}.cnf"
             
             output_path = output_dir / output_filename
             
