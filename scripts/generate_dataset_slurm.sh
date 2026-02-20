@@ -25,6 +25,9 @@ export JULIA_CPU_TARGET="generic"
 
 # Determine the project root
 if [ -n "$SLURM_SUBMIT_DIR" ]; then
+    # Add packages required on hpc
+    vpkg_require python/3.13.1
+    vpkg_require julia
     PROJECT_ROOT="$SLURM_SUBMIT_DIR"
 else
     # Running locally or directly, use the script's directory to find root
