@@ -4,12 +4,15 @@
 # Usage: sbatch generate_dataset_slurm.sh <N_VARS> [NUM_INSTANCES]
 # Example: sbatch generate_dataset_slurm.sh 8 5
 
-#SBATCH --job-name=tetris_benchmark
-#SBATCH --output=tetris_benchmark_%j.out
+#SBATCH --job-name=tetris_sat_dataset_generation
+#SBATCH --output=tetris_sat_dataset_generation_%j.out
+#SBATCH --error=tetris_sat_dataset_generation_%j.err
+#SBATCH --partition=idle
+#SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=5
-#SBATCH --time=02:00:00
-#SBATCH --mem=8G
+#SBATCH --cpus-per-task=8
+#SBATCH --time=04:00:00
+#SBATCH --mem=64G
 
 # Capture arguments
 N_VARS=${1:-10}        # Default to 10 if not provided
