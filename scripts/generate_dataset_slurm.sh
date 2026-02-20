@@ -23,10 +23,15 @@ export OPENBLAS_NUM_THREADS=1
 export JULIA_NUM_PRECOMPILE_TASKS=1
 export JULIA_CPU_TARGET="generic"
 
-# Ensure script directory (assuming scripts/ is one level deep)
-# If running from root: ./scripts/generate_dataset_slurm.sh
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-PROJECT_ROOT="$SCRIPT_DIR/.."
+# Determine the project root
+if [ -n "$SLURM_SUBMIT_DIR" ]; then
+    PROJECT_ROOT="$SLURM_SUBMIT_DIR"
+else
+    # Running locally or directly, use the script's directory to find root
+    SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+    PROJECT_ROOT="$SCRIPT_DIR/.."
+fi
+
 OUTPUT_DIR="$PROJECT_ROOT/results/$CUR_DATE"
 LOG_DIR="$OUTPUT_DIR/logs"
 
@@ -50,7 +55,8 @@ fi
 echo "Dataset generated successfully."
 
 # 2. Run Benchmark (Parallel Julia Workers)
-N_WORKERS=5 # Adjust based on number of available cores
+# Use $SLURM_CPUS_PER_TASK if available, otherwise default to 5
+N_WORKERS=${SLURM_CPUS_PER_TASK:-5}
 echo ">>> Step 2: Running Benchmark with $N_WORKERS workers..."
 
 for ((i=1; i<=N_WORKERS; i++))
