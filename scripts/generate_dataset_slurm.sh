@@ -25,14 +25,31 @@ export JULIA_CPU_TARGET="generic"
 
 # Determine the project root
 if [ -n "$SLURM_SUBMIT_DIR" ]; then
+    # Running in Slurm
     # Add packages required on hpc
     vpkg_require python/3.13.1
     vpkg_require julia
+    
     PROJECT_ROOT="$SLURM_SUBMIT_DIR"
+    
+    # Check for venv, create if missing, install requirements
+    VENV_DIR="$PROJECT_ROOT/venv"
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "Creating venv at $VENV_DIR..."
+        python3 -m venv "$VENV_DIR"
+        source "$VENV_DIR/bin/activate"
+        pip install -r "$PROJECT_ROOT/requirements.txt"
+    else
+        source "$VENV_DIR/bin/activate"
+    fi
 else
     # Running locally or directly, use the script's directory to find root
     SCRIPT_DIR="$(dirname "$(realpath "$0")")"
     PROJECT_ROOT="$SCRIPT_DIR/.."
+    
+    if [ -d "$PROJECT_ROOT/venv" ]; then
+        source "$PROJECT_ROOT/venv/bin/activate"
+    fi
 fi
 
 OUTPUT_DIR="$PROJECT_ROOT/results/$CUR_DATE"
