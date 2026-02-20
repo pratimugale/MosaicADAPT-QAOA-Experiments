@@ -47,6 +47,10 @@ Base.@kwdef mutable struct TetrisResult
     # Analysis
     first_layer_gradient_sum::Float64 = 0.0
     clause_satisfaction_percent_trace::Vector{Float64} = Float64[]
+
+    # Gurobi benchmarks
+    gurobi_energy::Float64 = NaN
+    approximation_ratio::Float64 = NaN
 end
 
 """
