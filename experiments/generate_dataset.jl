@@ -215,7 +215,7 @@ function main()
                     num_shots=1000,
                     layer_stopper_max=n_vars * 2,
                     energy_floor=gurobi_energy,
-                    floor_stopper_threshold=0.01,
+                    floor_stopper_threshold=0.1,
                     optimizer_tolerance=1e-6,
                     optimizer_max_iterations=1000,
                     slow_stopper_threshold=1e-6,
@@ -240,20 +240,20 @@ function main()
                     "seed" => seed,
                     "config_label" => label,
                     "energy_floor" => gurobi_energy,
+                    "max_satisfied_gurobi" => max_satisfied,
+                    "num_clauses" => length(clauses),
 
                     # Params
                     "initial_gamma" => gamma,
                     "method" => use_kamis ? "kamis" : "greedy",
                     "pool" => pool_type,
-
-                    # Metrics
                     "time" => t_res.total_runtime,
                     "adapt_time" => t_res.adapt_runtime,
-                    "energy" => t_res.final_energy,
+                    "tetris_final_energy" => t_res.final_energy,
                     "iterations" => t_res.num_iterations,
                     "layers" => t_res.num_adapt_layers,
                     "success" => t_res.success,
-                    "satisfaction_percent" => t_res.percent_satisfied_clauses,
+                    "tetris_satisfaction_percent" => t_res.percent_satisfied_clauses,
                     "stop_reason" => t_res.callback_flagged,
 
                     # Traces
@@ -268,7 +268,7 @@ function main()
         end # gammas
 
         # --- 3. Find Best Result ---
-        sort!(instance_results, by=x -> (-x["satisfaction_percent"], x["layers"]))
+        sort!(instance_results, by=x -> (-x["tetris_satisfaction_percent"], x["layers"]))
 
         best_res = instance_results[1]
         push!(final_results_best["results"], best_res)

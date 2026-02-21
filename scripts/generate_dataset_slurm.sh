@@ -29,6 +29,7 @@ if [ -n "$SLURM_SUBMIT_DIR" ]; then
     # Add packages required on hpc
     vpkg_require python/3.13.1
     vpkg_require julia
+    vpkg_require gcc/14.2
     
     PROJECT_ROOT="$SLURM_SUBMIT_DIR"
     
@@ -47,6 +48,7 @@ else
     SCRIPT_DIR="$(dirname "$(realpath "$0")")"
     PROJECT_ROOT="$SCRIPT_DIR/.."
     
+    # Locally we assume venv exists or user handles it, but we can activate if found
     if [ -d "$PROJECT_ROOT/venv" ]; then
         source "$PROJECT_ROOT/venv/bin/activate"
     fi
@@ -64,15 +66,25 @@ echo "Project Root: $PROJECT_ROOT"
 echo "Output Dir: $OUTPUT_DIR"
 
 # 1. Generate Dataset (Single Threaded Python)
-echo ">>> Step 1: Generating Dataset..."
+echo ">>> Step 1: Checking/Generating Dataset..."
 
-python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42
+# Path to check for existing balanced instances
+DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/balancedsat"
 
-if [ $? -ne 0 ]; then
-    echo "Dataset generation failed!"
-    exit 1
+# Check if any .cnf files exist in the dataset directory
+# ls -A checks "almost all" files (skips . and ..). If directory exists and has files, this is truthy.
+if [ -d "$DATASET_DIR" ] && [ "$(ls -A "$DATASET_DIR"/*.cnf 2>/dev/null)" ]; then
+    echo "Dataset files found in $DATASET_DIR. Using existing dataset."
+else
+    echo "Generating new dataset..."
+    python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42
+
+    if [ $? -ne 0 ]; then
+        echo "Dataset generation failed!"
+        exit 1
+    fi
+    echo "Dataset generated successfully."
 fi
-echo "Dataset generated successfully."
 
 # 2. Run Benchmark (Parallel Julia Workers)
 # Use $SLURM_CPUS_PER_TASK if available, otherwise default to 5
