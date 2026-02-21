@@ -4,14 +4,19 @@
 import Pkg
 Pkg.activate(".")
 
-import JSON
-import Dates
 import Random
-using Printf
-using PyCall
+using JSON
+using Dates
+using ProgressMeter
+using Base.Threads
 using LinearAlgebra
 using ArgParse
 using Multibreak
+
+# Set Julia multithreading based on environment if not already set
+# This is typically done before starting Julia, but can be set here if needed.
+# For example, if you want to ensure a specific number of threads regardless of environment.
+# ENV["JULIA_NUM_THREADS"] = "4" # Uncomment and set if needed
 
 # Include project modules
 include(joinpath(@__DIR__, "..", "src", "MIS_TETRIS_ADAPT.jl"))
@@ -98,6 +103,10 @@ function main()
     if !isdir(results_dir)
         mkpath(results_dir)
     end
+
+    println("Environment configurations:")
+    println("-> Julia threads: ", Threads.nthreads())
+    println("-> BLAS threads:  ", LinearAlgebra.BLAS.get_num_threads())
 
     # Unique output filenames for this worker
     # Note: Even though partitioning is dynamic via @multibreak, 
