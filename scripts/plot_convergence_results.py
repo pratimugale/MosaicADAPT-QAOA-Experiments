@@ -93,7 +93,7 @@ def create_summary_table(df_all, df_best):
 
     # 2. Process "Best" Configuration (The Hybrid/Oracle result)
     if not df_best.empty:
-        row = {'Configuration': 'Best Instances Per Configuration'}
+        row = {'Configuration': 'Best Result'}
         for col in stats_cols:
             row[f'{col} (Mean)'] = df_best[col].mean()
             row[f'{col} (Median)'] = df_best[col].median()
@@ -159,7 +159,7 @@ def create_approx_ratio_table(df_all, df_best):
     # 2. Process "Best" Configuration
     df_best_ratio = calculate_ratio(df_best)
     if not df_best_ratio.empty:
-        row = {'Configuration': 'Best Instances Per Configuration'}
+        row = {'Configuration': 'Best Result'}
         valid_ratios = df_best_ratio[stats_col].dropna()
         if not valid_ratios.empty:
             row[f'{stats_col} (Mean)'] = valid_ratios.mean()
@@ -173,88 +173,51 @@ def create_approx_ratio_table(df_all, df_best):
 
 def plot_outlier_counts(df_all, df_best, pdf):
     """
-    Plots a table of the number of instances that are above 1 std deviation of layers median
-    and 1 std deviation below the sat mean.
+    Plots a text page listing the instance IDs that are above 2 std deviations of layers median
+    and 2 std deviations below the sat mean, ONLY for the Best Result.
     """
-    rows = []
-    
-    def get_count(df, label):
-        if df.empty or len(df) < 2:
-            return {
-                'Configuration': label, 
-                'High Layers (> Med+1SD)': 0,
-                'Low Sat (< Mean-1SD)': 0,
-                'High Layers IDs': "",
-                'Low Sat IDs': ""
-            }
-        layer_median = df['layers'].median()
-        layer_std = df['layers'].std()
-        sat_mean = df['tetris_satisfaction_percent'].mean()
-        sat_std = df['tetris_satisfaction_percent'].std()
-        
-        layer_threshold = layer_median + layer_std
-        sat_threshold = sat_mean - sat_std
-        
-        high_layers_df = df[df['layers'] > layer_threshold]
-        count_layers = len(high_layers_df)
-        
-        low_sat_df = df[df['tetris_satisfaction_percent'] < sat_threshold]
-        count_sat = len(low_sat_df)
-        
-        outliers_df = df[(df['layers'] > layer_threshold) & (df['tetris_satisfaction_percent'] < sat_threshold)]
-        
-        high_layers_ids = ""
-        low_sat_ids = ""
-        
-        if count_layers > 0 and 'instance_idx' in high_layers_df.columns:
-            high_layers_ids = ",".join(map(str, high_layers_df['instance_idx'].tolist()))
-            
-        if count_sat > 0 and 'instance_idx' in low_sat_df.columns:
-            low_sat_ids = ",".join(map(str, low_sat_df['instance_idx'].tolist()))
-        
-        return {
-            'Configuration': label, 
-            'High Layers (> Med+1SD)': count_layers,
-            'Low Sat (< Mean-1SD)': count_sat,
-            'High Layers IDs': high_layers_ids,
-            'Low Sat IDs': low_sat_ids
-        }
-
-    if not df_all.empty:
-        grouped = df_all.groupby('config_label')
-        for name, group in grouped:
-            rows.append(get_count(group, name))
-            
-    if not df_best.empty:
-        rows.append(get_count(df_best, 'Best Instances Per Configuration'))
-        
-    if not rows:
+    if df_best.empty or len(df_best) < 2:
         return
-
-    outlier_df = pd.DataFrame(rows)
+        
+    layer_median = df_best['layers'].median()
+    layer_std = df_best['layers'].std()
+    sat_mean = df_best['tetris_satisfaction_percent'].mean()
+    sat_std = df_best['tetris_satisfaction_percent'].std()
     
-    # Print exactly what we are putting into the PDF to the console
+    layer_threshold = layer_median + (2 * layer_std)
+    sat_threshold = sat_mean - (2 * sat_std)
+    
+    high_layers_df = df_best[df_best['layers'] > layer_threshold]
+    low_sat_df = df_best[df_best['tetris_satisfaction_percent'] < sat_threshold]
+    
+    high_layers_ids = high_layers_df['instance_idx'].tolist() if 'instance_idx' in high_layers_df.columns else []
+    low_sat_ids = low_sat_df['instance_idx'].tolist() if 'instance_idx' in low_sat_df.columns else []
+    
     print("\n" + "="*80)
-    print("OUTLIER ANALYSIS (Matches PDF Table)")
+    print("BEST RESULT OUTLIERS (2 Standard Deviations)")
     print("="*80)
-    print(outlier_df.to_string(index=False))
+    print(f"High Layers IDs: {high_layers_ids}")
+    print(f"Low Sat IDs: {low_sat_ids}")
     print("="*80 + "\n")
     
-    
-    fig, ax = plt.subplots(figsize=(12, len(outlier_df) * 0.5 + 2))
-    ax.axis('tight')
+    fig, ax = plt.subplots(figsize=(10, 4))
     ax.axis('off')
     
-    table = ax.table(cellText=outlier_df.values,
-                     colLabels=outlier_df.columns,
-                     loc='center',
-                     cellLoc='center')
+    plt.title("Best Result Outlier Analysis (2 SD)", fontsize=14, fontweight='bold', y=0.9)
     
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1.2, 1.2)
+    text_content = (
+        f"Instances with Layers > Median + 2 SD:\n"
+        f"{high_layers_ids}\n\n"
+        f"Instances with Sat % < Mean - 2 SD:\n"
+        f"{low_sat_ids}"
+    )
     
-    plt.title("Outlier Analysis\n(Layers > Median + 1SD and Sat % < Mean - 1SD)", y=0.98)
+    ax.text(0.1, 0.7, text_content, 
+            transform=ax.transAxes, 
+            fontsize=12, 
+            verticalalignment='top', 
+            wrap=True)
+            
     pdf.savefig(fig, bbox_inches='tight')
     plt.close()
 
@@ -284,6 +247,8 @@ def plot_best_config_distribution(df_best, pdf):
 
     pdf.savefig()
     plt.close()
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Summary Table from Benchmark Results")
@@ -393,6 +358,7 @@ def main():
         # Page 3: Outlier Counts
         plot_outlier_counts(df_all, df_best, pdf)
         
+
     print(f"PDF Report saved to {output_pdf}")
 
 if __name__ == "__main__":
