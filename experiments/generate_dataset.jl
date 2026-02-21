@@ -4,10 +4,11 @@
 import Pkg
 Pkg.activate(".")
 
+import JSON
+import Dates
 import Random
-using JSON
-using Dates
-using ProgressMeter
+using Printf
+using PyCall
 using Base.Threads
 using LinearAlgebra
 using ArgParse
