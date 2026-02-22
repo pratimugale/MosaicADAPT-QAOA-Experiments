@@ -27,6 +27,8 @@ def extract_outlier_filenames(results_dir):
                 data = json.load(f)
                 if isinstance(data, list):
                     all_records.extend(data)
+                elif isinstance(data, dict) and "results" in data:
+                    all_records.extend(data["results"])
                 else:
                     print(f"Warning: Unexpected JSON structure in {file_path}", file=sys.stderr)
         except Exception as e:
