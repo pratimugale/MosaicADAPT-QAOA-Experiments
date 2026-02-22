@@ -45,10 +45,13 @@ function run_tetris(config::TetrisConfig, instance::Dict;
 
     # 3. Create Pool
     local pool
+    local active_mask = nothing
     if pool_type == "qaoa_double_pool"
         pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_double_pool(n_vars)
     elseif pool_type == "qaoa_nondiagonal_double_pool"
         pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_nondiagonal_double_pool(n_vars)
+    elseif pool_type == "tailored_triple_pool"
+        pool, active_mask = MIS_TETRIS_ADAPT.qaoa_clause_tailored_pool(n_vars, formula)
     else
         error("Unknown pool_type: $pool_type")
     end
@@ -122,6 +125,12 @@ function run_tetris(config::TetrisConfig, instance::Dict;
     end
 
     selected_indices = get(trace, :selected_index, Any[])
+
+    # Map subset indices back to AI-predictable global indices if using a tailored pool
+    if active_mask !== nothing && !isempty(selected_indices)
+        selected_indices = [active_mask[i] for i in selected_indices]
+    end
+
     selected_scores = get(trace, :selected_score, Float64[])
     callback_flagged = get(trace, :callback_flagged, "")
     parameter_trace = get(trace, :parameters, Any[])
@@ -146,6 +155,9 @@ function run_tetris(config::TetrisConfig, instance::Dict;
     # 10. Final Sampling
     t_start_sampling = time()
     final_state = ADAPT.evolve_state(qaoa_ansatz, ψ0)
+
+    # Due to floating point degradation in complex 3Q evolutions, explicitly normalize the state array
+    final_state ./= norm(final_state)
 
     # Sampling
     samples_bitmatrix = ADAPT.sample_from_state(final_state, config.num_shots)

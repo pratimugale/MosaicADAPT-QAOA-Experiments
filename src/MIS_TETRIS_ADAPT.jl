@@ -18,6 +18,7 @@ include("exact_solvers/utils.jl")
 include("exact_solvers/gurobi_exact_hamiltonian.jl")
 
 # Include Runners
+include("qaoa/qaoa_pools.jl")
 include("qaoa/greedy_tetris.jl")
 include("bruteforce/bruteforce.jl")
 include("qaoa/run_layerstopped_tetris.jl")
