@@ -108,9 +108,24 @@ fi
 echo "Detected N=$N_VARS"
 echo "Executing Julia backend..."
 
-# Run the julia worker natively 
-julia --project="$PROJECT_ROOT" "$JULIA_SCRIPT" --n_vars "$N_VARS" --outliers_file "$OUTPUT_FILE"
+# Get the number of workers natively from Slurm, defaulting to 1 for generic runs
+N_WORKERS=${SLURM_CPUS_PER_TASK:-1}
+echo "Executing Julia backend with $N_WORKERS independent workers..."
+
+for ((i=1; i<=N_WORKERS; i++))
+do
+    echo "Starting Outlier Worker $i..."
+    julia --project="$PROJECT_ROOT" "$JULIA_SCRIPT" \
+        --n_vars "$N_VARS" \
+        --outliers_file "$OUTPUT_FILE" \
+        --worker_id $i \
+        --n_workers $N_WORKERS \
+        > "${RESULTS_DIR}/outlier_worker_${i}.log" 2>&1 &
+done
+
+wait
+echo "All Outlier Workers completed successfully."
 
 # Cleanup
-rm "$OUTPUT_FILE"
+rm -f "$OUTPUT_FILE"
 echo "=== Pipeline Completed Successfully ==="

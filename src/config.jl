@@ -27,6 +27,7 @@ Base.@kwdef struct TetrisConfig
     # Optimizer
     optimizer_tolerance::Float64 = 1e-6
     optimizer_max_iterations::Int = 100
+    optimizer_jitter::Float64 = 0.0 # Standard deviation for Gaussian noise
 
     # Sampling
     num_shots::Int = 1000

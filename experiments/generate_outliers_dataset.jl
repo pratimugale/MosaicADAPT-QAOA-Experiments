@@ -49,6 +49,14 @@ function parse_commandline()
         help = "Path to a text file containing the exact CNF filenames to process"
         arg_type = String
         required = true
+        "--worker_id"
+        help = "ID of this worker (1-based)"
+        arg_type = Int
+        default = 1
+        "--n_workers"
+        help = "Total number of workers"
+        arg_type = Int
+        default = 1
         "--seed"
         help = "Random seed"
         arg_type = Int
@@ -98,6 +106,9 @@ function main()
     println("-> Julia threads: ", Threads.nthreads())
     println("-> BLAS threads:  ", LinearAlgebra.BLAS.get_num_threads())
 
+    worker_id = args["worker_id"]
+    n_workers = args["n_workers"]
+
     # Read exactly which outlier files to run
     outliers_list_path = args["outliers_file"]
     if !isfile(outliers_list_path)
@@ -105,20 +116,42 @@ function main()
         return
     end
 
-    my_files = readlines(outliers_list_path)
+    all_files = readlines(outliers_list_path)
     # Strip empty lines and hidden characters
-    my_files = filter(f -> !isempty(strip(f)), my_files)
-    my_files = map(strip, my_files)
+    all_files = filter(f -> !isempty(strip(f)), all_files)
+    all_files = map(strip, all_files)
 
-    total_files = length(my_files)
-    println("Outlier Runner processing exactly $total_files instances.")
+    total_files = length(all_files)
 
-    # Unique output filenames for this targeted run
-    output_file_all = joinpath(results_dir, "benchmark_outliers_N$(n_vars)_all_$(timestamp).json")
-    output_file_best = joinpath(results_dir, "benchmark_outliers_N$(n_vars)_best_$(timestamp).json")
+    # ----------------------------------------------------
+    # Partition workload across workers
+    # ----------------------------------------------------
+    base_chunk = div(total_files, n_workers)
+    remainder = total_files % n_workers
+
+    start_idx = 1
+    for w in 1:(worker_id-1)
+        start_idx += base_chunk + (w <= remainder ? 1 : 0)
+    end
+    chunk_size = base_chunk + (worker_id <= remainder ? 1 : 0)
+    end_idx = start_idx + chunk_size - 1
+
+    if chunk_size == 0
+        println("Worker $worker_id has no files to process. Exiting.")
+        return
+    end
+
+    my_files = all_files[start_idx:end_idx]
+
+    println("Outlier Runner (Worker $worker_id / $n_workers) processing $(length(my_files)) instances (indices $start_idx to $end_idx out of $total_files).")
+
+    # Unique output filenames for this targeted run and worker
+    output_file_all = joinpath(results_dir, "benchmark_outliers_N$(n_vars)_worker$(worker_id)_all_$(timestamp).json")
+    output_file_best = joinpath(results_dir, "benchmark_outliers_N$(n_vars)_worker$(worker_id)_best_$(timestamp).json")
 
     println("=== Starting Outlier Rescue Protocol ===")
     println("N: $n_vars")
+    println("Worker: $worker_id / $n_workers")
     println("Seed: $seed")
     println("Output All: $output_file_all")
     println("Output Best: $output_file_best")
@@ -128,6 +161,7 @@ function main()
     final_results_all = Dict(
         "timestamp" => timestamp,
         "n_vars" => n_vars,
+        "worker_id" => worker_id,
         "is_outlier_run" => true,
         "results" => []
     )
@@ -135,11 +169,12 @@ function main()
     final_results_best = Dict(
         "timestamp" => timestamp,
         "n_vars" => n_vars,
+        "worker_id" => worker_id,
         "is_outlier_run" => true,
         "results" => []
     )
 
-    initial_gammas = [0.001, 0.01, 0.1, 0.5, 1.0]
+    initial_gammas = [0.001, 0.01, 0.1]
 
     # Define Grid
     # Strategies: (use_kamis, pool_type, pct_tail, label_base)
@@ -196,11 +231,12 @@ function main()
                     initial_gamma=gamma,
                     hamiltonian_type="exact",
                     num_shots=1000,
-                    layer_stopper_max=n_vars * 2,
+                    layer_stopper_max=7,
                     energy_floor=gurobi_energy,
                     floor_stopper_threshold=0.1,
                     optimizer_tolerance=1e-6,
                     optimizer_max_iterations=1000,
+                    optimizer_jitter=0.10, # Break plateaus with 5% Gaussian noise
                     slow_stopper_threshold=1e-6,
                     slow_stopper_patience=5,
                     gradient_threshold=1e-6,
