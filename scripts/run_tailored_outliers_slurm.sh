@@ -73,6 +73,13 @@ echo "Phase 1: Computing +2SD Layers from JSON Records..."
 
 python3 "$OUTLIER_SCRIPT" "$RESULTS_DIR" > "$OUTPUT_FILE"
 
+# Make sure Python didn't crash (e.g. invalid directory)
+if [ $? -ne 0 ]; then
+    echo "Error: Python extraction script failed violently. Check stderr logs."
+    rm -f "$OUTPUT_FILE"
+    exit 1
+fi
+
 # Check if there are any outliers found
 NUM_OUTLIERS=$(wc -l < "$OUTPUT_FILE" | tr -d ' ')
 
