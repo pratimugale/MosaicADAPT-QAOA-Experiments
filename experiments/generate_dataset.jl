@@ -65,6 +65,10 @@ function parse_commandline()
         help = "Directory to save results"
         arg_type = String
         default = "results"
+        "--dataset_name"
+        help = "The subfolder inside dataset/satqubolib to load instances from"
+        arg_type = String
+        default = "balancedsat"
     end
 
     return parse_args(s)
@@ -88,6 +92,7 @@ function main()
     worker_id = args["worker_id"]
     n_workers = args["n_workers"]
     seed = args["seed"]
+    dataset_name = args["dataset_name"]
 
     BLAS.set_num_threads(1)
     println("BLAS threads: $(BLAS.get_num_threads())")
@@ -148,9 +153,8 @@ function main()
 
     # Locate files
     # Only "balanced" for now as per plan
-    type = "balanced"
-    subdir_name = "balancedsat"
-    dataset_dir = joinpath(@__DIR__, "..", "dataset", "satqubolib", subdir_name)
+    type = dataset_name
+    dataset_dir = joinpath(@__DIR__, "..", "dataset", "satqubolib", dataset_name)
 
     if !isdir(dataset_dir)
         println("Error: Dataset directory not found: $dataset_dir")

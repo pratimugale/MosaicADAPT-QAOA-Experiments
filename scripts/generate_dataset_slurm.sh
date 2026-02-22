@@ -17,6 +17,7 @@
 # Capture arguments
 N_VARS=${1:-10}        # Default to 10 if not provided
 NUM_INSTANCES=${2:-50} # Default to 50 if not provided
+DATASET_NAME=${3:-"balancedsat"} # Subfolder inside dataset/satqubolib
 
 CUR_DATE=$(date +'%Y-%m-%d_%H-%M-%S')
 export OPENBLAS_NUM_THREADS=1
@@ -62,6 +63,7 @@ mkdir -p "$LOG_DIR"
 echo "=== Benchmark Run Start: $CUR_DATE ==="
 echo "N_VARS: $N_VARS"
 echo "NUM_INSTANCES: $NUM_INSTANCES"
+echo "Dataset: $DATASET_NAME"
 echo "Project Root: $PROJECT_ROOT"
 echo "Output Dir: $OUTPUT_DIR"
 
@@ -69,15 +71,20 @@ echo "Output Dir: $OUTPUT_DIR"
 echo ">>> Step 1: Checking/Generating Dataset..."
 
 # Path to check for existing balanced instances
-DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/balancedsat"
+DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/$DATASET_NAME"
 
 # Check if any .cnf files exist in the dataset directory
 # ls -A checks "almost all" files (skips . and ..). If directory exists and has files, this is truthy.
 if [ -d "$DATASET_DIR" ] && [ "$(ls -A "$DATASET_DIR"/*.cnf 2>/dev/null)" ]; then
     echo "Dataset files found in $DATASET_DIR. Using existing dataset."
 else
-    echo "Generating new dataset..."
-    python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42
+    if [ "$DATASET_NAME" = "balancedsat" ]; then
+        echo "Generating new $DATASET_NAME dataset..."
+        python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42
+    else
+        echo "Dataset $DATASET_NAME not found and generation not configured. Run Python generator manually."
+        exit 1
+    fi
 
     if [ $? -ne 0 ]; then
         echo "Dataset generation failed!"
@@ -101,6 +108,7 @@ do
         --n_workers $N_WORKERS \
         --output_dir "$OUTPUT_DIR" \
         --seed 42 \
+        --dataset_name "$DATASET_NAME" \
         > "$LOG_DIR/worker_${i}.log" 2>&1 &
 done
 
