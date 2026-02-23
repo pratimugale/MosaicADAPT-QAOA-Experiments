@@ -187,8 +187,10 @@ def plot_outlier_counts(df_all, df_best, pdf):
     layer_threshold = layer_median + (2 * layer_std)
     sat_threshold = sat_mean - (2 * sat_std)
     
-    high_layers_df = df_best[df_best['layers'] >= layer_threshold]
-    low_sat_df = df_best[df_best['tetris_satisfaction_percent'] <= sat_threshold]
+    # 2 SD outliers - only flag if there is actually variance and skip perfect scores
+    high_layers_df = df_best[(df_best['layers'] > layer_threshold)] if layer_std > 1e-6 else pd.DataFrame()
+    low_sat_df = df_best[(df_best['tetris_satisfaction_percent'] < sat_threshold) & 
+                         (df_best['tetris_satisfaction_percent'] < 0.9999)] if sat_std > 1e-6 else pd.DataFrame()
     
     # Create strings with ID and Value
     high_layers_info = [f"{idx}: {l}" for idx, l in zip(high_layers_df['instance_idx'], high_layers_df['layers'])]
@@ -208,12 +210,12 @@ def plot_outlier_counts(df_all, df_best, pdf):
     
     text_content = (
         f"Layers:       median = {layer_median:.2f},  std = {layer_std:.2f}  "
-        f"(threshold >= {layer_threshold:.2f})\n"
+        f"(threshold > {layer_threshold:.2f})\n"
         f"Satisfaction: mean   = {sat_mean:.4f},  std = {sat_std:.4f}  "
-        f"(threshold <= {sat_threshold:.4f})\n\n"
-        f"Instances with Layers >= Threshold:\n"
+        f"(threshold < {sat_threshold:.4f})\n\n"
+        f"Instances with Layers > Threshold:\n"
         f"{', '.join(high_layers_info) if high_layers_info else 'None'}\n\n"
-        f"Instances with Sat % <= Threshold:\n"
+        f"Instances with Sat % < Threshold:\n"
         f"{', '.join(low_sat_info) if low_sat_info else 'None'}"
     )
     
