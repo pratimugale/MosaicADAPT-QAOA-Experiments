@@ -206,6 +206,10 @@ def plot_outlier_counts(df_all, df_best, pdf):
     plt.title("Best Result Outlier Analysis (2 SD)", fontsize=14, fontweight='bold', y=0.9)
     
     text_content = (
+        f"Layers:       median = {layer_median:.2f},  std = {layer_std:.2f}  "
+        f"(threshold > {layer_threshold:.2f})\n"
+        f"Satisfaction: mean   = {sat_mean:.4f},  std = {sat_std:.4f}  "
+        f"(threshold < {sat_threshold:.4f})\n\n"
         f"Instances with Layers > Median + 2 SD:\n"
         f"{high_layers_ids}\n\n"
         f"Instances with Sat % < Mean - 2 SD:\n"
