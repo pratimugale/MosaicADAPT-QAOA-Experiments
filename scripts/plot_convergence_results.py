@@ -187,36 +187,37 @@ def plot_outlier_counts(df_all, df_best, pdf):
     layer_threshold = layer_median + (2 * layer_std)
     sat_threshold = sat_mean - (2 * sat_std)
     
-    high_layers_df = df_best[df_best['layers'] > layer_threshold]
-    low_sat_df = df_best[df_best['tetris_satisfaction_percent'] < sat_threshold]
+    high_layers_df = df_best[df_best['layers'] >= layer_threshold]
+    low_sat_df = df_best[df_best['tetris_satisfaction_percent'] <= sat_threshold]
     
-    high_layers_ids = high_layers_df['instance_idx'].tolist() if 'instance_idx' in high_layers_df.columns else []
-    low_sat_ids = low_sat_df['instance_idx'].tolist() if 'instance_idx' in low_sat_df.columns else []
+    # Create strings with ID and Value
+    high_layers_info = [f"{idx}: {l}" for idx, l in zip(high_layers_df['instance_idx'], high_layers_df['layers'])]
+    low_sat_info = [f"{idx}: {s:.4f}" for idx, s in zip(low_sat_df['instance_idx'], low_sat_df['tetris_satisfaction_percent'])]
     
     print("\n" + "="*80)
     print("BEST RESULT OUTLIERS (2 Standard Deviations)")
     print("="*80)
-    print(f"High Layers IDs: {high_layers_ids}")
-    print(f"Low Sat IDs: {low_sat_ids}")
+    print(f"High Layers (ID: Val): {high_layers_info}")
+    print(f"Low Sat (ID: Val): {low_sat_info}")
     print("="*80 + "\n")
     
-    fig, ax = plt.subplots(figsize=(10, 4))
+    fig, ax = plt.subplots(figsize=(10, 5))
     ax.axis('off')
     
-    plt.title("Best Result Outlier Analysis (2 SD)", fontsize=14, fontweight='bold', y=0.9)
+    plt.title("Best Result Outlier Analysis (2 SD)", fontsize=14, fontweight='bold', y=0.95)
     
     text_content = (
         f"Layers:       median = {layer_median:.2f},  std = {layer_std:.2f}  "
-        f"(threshold > {layer_threshold:.2f})\n"
+        f"(threshold >= {layer_threshold:.2f})\n"
         f"Satisfaction: mean   = {sat_mean:.4f},  std = {sat_std:.4f}  "
-        f"(threshold < {sat_threshold:.4f})\n\n"
-        f"Instances with Layers > Median + 2 SD:\n"
-        f"{high_layers_ids}\n\n"
-        f"Instances with Sat % < Mean - 2 SD:\n"
-        f"{low_sat_ids}"
+        f"(threshold <= {sat_threshold:.4f})\n\n"
+        f"Instances with Layers >= Threshold:\n"
+        f"{', '.join(high_layers_info) if high_layers_info else 'None'}\n\n"
+        f"Instances with Sat % <= Threshold:\n"
+        f"{', '.join(low_sat_info) if low_sat_info else 'None'}"
     )
     
-    ax.text(0.1, 0.7, text_content, 
+    ax.text(0.1, 0.8, text_content, 
             transform=ax.transAxes, 
             fontsize=12, 
             verticalalignment='top', 
