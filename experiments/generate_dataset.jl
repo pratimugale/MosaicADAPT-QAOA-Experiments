@@ -149,7 +149,7 @@ function main()
         (true, "qaoa_nondiagonal_double_pool", 0.0, "KaMIS_NewPool")
     ]
 
-    initial_gammas = [0.001, 0.01, 0.1]
+    initial_gammas = [0.001, 0.01, 0.1, 0.5, 1.0]
 
     # Locate files
     # Only "balanced" for now as per plan
@@ -232,7 +232,6 @@ function main()
                     floor_stopper_threshold=0.1,
                     optimizer_tolerance=1e-6,
                     optimizer_max_iterations=1000,
-                    optimizer_jitter=0.10, # Optimum Gaussian noise
                     slow_stopper_threshold=1e-6,
                     slow_stopper_patience=5,
                     gradient_threshold=1e-6,
