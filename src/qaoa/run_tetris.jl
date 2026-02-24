@@ -95,6 +95,12 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         ClauseSatisfactionTracer(formula, n_vars),
     ]
 
+    # Approximation Ratio Stopper — only active when Gurobi satisfaction data is available
+    if !isnan(config.gurobi_percent_satisfied_threshold)
+        @info "Registering ApproxRatioStopper with threshold=$(config.gurobi_percent_satisfied_threshold)"
+        push!(callbacks, ApproxRatioStopper(config.approx_ratio_stopper_min_layers, config.approx_ratio_stopper_threshold, config.gurobi_percent_satisfied_threshold, length(formula)))
+    end
+
     # Floor Stopper
     if !isnan(config.energy_floor)
         # In the case of the exact hamiltonian, and in some cases of the approximat hamiltonian, 

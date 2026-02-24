@@ -43,12 +43,8 @@ def generate_max3sat_instance(sat_type, num_variables, clause_to_variable_ratio,
     cnf_formula: CNF = generator.generate()
     
     # Construct filename
-    if num_instances == 1:
-        suffix = f"_seed{seed}" if seed is not None else ""
-        output_filename = f"sat_{num_variables}_vars_{num_clauses}_clauses{suffix}.cnf"
-    else:
-        suffix = f"_seed{instance_seed}" if seed is not None else f"_{instance_idx+1}"
-        output_filename = f"sat_{num_variables}_vars_{num_clauses}_clauses{suffix}.cnf"
+    suffix = f"_seed{instance_seed}" if seed is not None else f"_{instance_idx+1}"
+    output_filename = f"sat_{num_variables}_vars_{num_clauses}_clauses{suffix}.cnf"
     
     output_path = output_dir / output_filename
     cnf_formula.to_file(str(output_path))

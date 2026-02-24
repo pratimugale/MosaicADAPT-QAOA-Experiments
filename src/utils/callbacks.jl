@@ -46,3 +46,55 @@ function (tracer::ClauseSatisfactionTracer)(
     push!(get!(trace, :satisfiedclauses, Any[]), expected_satisfied_clauses)
     return false
 end
+
+"""
+    ApproxRatioStopper(min_layers, approx_ratio_threshold, gurobi_percent_satisfied_threshold, formula_length)
+
+Stops ADAPT when:
+  1. The number of layers added so far exceeds `min_layers`, AND
+  2. The approximation ratio exceeds `approx_ratio_threshold`.
+
+Approximation ratio = (expected % satisfied by Tetris) / (% satisfied by Gurobi).
+
+`ClauseSatisfactionTracer` must appear earlier in the callbacks list so that
+`:satisfiedclauses` is populated in the trace when this callback runs.
+"""
+struct ApproxRatioStopper <: ADAPT.AbstractCallback
+    min_layers::Int
+    approx_ratio_threshold::Float64
+    gurobi_percent_satisfied_threshold::Float64
+    formula_length::Int
+end
+
+function (stopper::ApproxRatioStopper)(
+    ::ADAPT.Data, ansatz::ADAPT.AbstractAnsatz, trace::ADAPT.Trace,
+    ::ADAPT.AdaptProtocol, ::ADAPT.GeneratorList,
+    ::ADAPT.Observable, ::ADAPT.QuantumState,
+)
+    n_layers = length(ansatz.γ_layers)
+
+    # Only activate after min_layers
+    if n_layers <= stopper.min_layers
+        return false
+    end
+
+    # Read the latest expected satisfied clauses (populated by ClauseSatisfactionTracer)
+    satisfied_trace = get(trace, :satisfiedclauses, Any[])
+    if isempty(satisfied_trace)
+        return false
+    end
+    expected_satisfied = Float64(last(satisfied_trace))
+
+    # Compute approximation ratio
+    tetris_percent = expected_satisfied / stopper.formula_length
+    approx_ratio = tetris_percent / stopper.gurobi_percent_satisfied_threshold
+
+    @info "ApproxRatioStopper: layers=$n_layers, tetris_pct=$(round(tetris_percent, digits=4)), gurobi_pct=$(round(stopper.gurobi_percent_satisfied_threshold, digits=4)), ratio=$(round(approx_ratio, digits=4))"
+
+    if approx_ratio >= stopper.approx_ratio_threshold
+        @info "ApproxRatioStopper: Stopping — approximation ratio $(round(approx_ratio, digits=4)) ≥ $(stopper.approx_ratio_threshold) after $n_layers layers."
+        return true
+    end
+
+    return false
+end

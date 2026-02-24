@@ -5,6 +5,7 @@ import ADAPT
 # Export core types
 export TetrisConfig, TetrisResult, BruteForceResult, BenchmarkResult
 export run_greedy_tetris, run_bruteforce
+export ClauseSatisfactionTracer, ApproxRatioStopper
 
 include("config.jl")
 include("results.jl")

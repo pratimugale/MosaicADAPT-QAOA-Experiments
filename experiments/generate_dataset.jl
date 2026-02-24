@@ -23,7 +23,7 @@ using Multibreak
 include(joinpath(@__DIR__, "..", "src", "MIS_TETRIS_ADAPT.jl"))
 import .MIS_TETRIS_ADAPT: TetrisConfig, BenchmarkResult, BruteForceResult, TetrisResult
 import .MIS_TETRIS_ADAPT: run_greedy_tetris, run_bruteforce, parse_cnf_file
-import .MIS_TETRIS_ADAPT: ClauseSatisfactionTracer, convert_formula_to_clauses, solve_max_e3sat_exact
+import .MIS_TETRIS_ADAPT: ClauseSatisfactionTracer, ApproxRatioStopper, convert_formula_to_clauses, solve_max_e3sat_exact
 import .MIS_TETRIS_ADAPT: get_formula_as_struct
 
 # TODO: remove this later
@@ -31,6 +31,68 @@ import ADAPT
 
 # Include generic runner
 include(joinpath(@__DIR__, "..", "src", "qaoa", "run_tetris.jl"))
+
+"""
+    pauli_op_to_string(op, n_vars) -> String
+
+Convert a pool operator (Vector{ScaledPauli}) to a human-readable Pauli string.
+Uses the x/z bitmask encoding from PauliOperators:
+  - x=1, z=0 → X
+  - x=1, z=1 → Y  (Y = iXZ)
+  - x=0, z=1 → Z
+
+For multi-term operators, joins all terms with "+".
+"""
+function pauli_op_to_string(op, n_vars::Int)::String
+    term_strings = String[]
+    for sp in op
+        pauli = sp.pauli
+        qubit_labels = String[]
+        for q in 1:n_vars
+            bit = 1 << (q - 1)
+            has_x = (pauli.x & bit) != 0
+            has_z = (pauli.z & bit) != 0
+            if has_x && has_z
+                push!(qubit_labels, "Y$q")
+            elseif has_x
+                push!(qubit_labels, "X$q")
+            elseif has_z
+                push!(qubit_labels, "Z$q")
+            end
+        end
+        push!(term_strings, isempty(qubit_labels) ? "I" : join(qubit_labels))
+    end
+    return join(term_strings, "+")
+end
+
+"""
+    save_pool_operator_map(n_vars, pool_type, output_dir)
+
+Build the operator pool for the given N and pool type, then save a JSON file
+mapping each operator index (1-based) to its Pauli string representation.
+"""
+function save_pool_operator_map(n_vars::Int, pool_type::String, output_dir::String)
+    local pool
+    if pool_type == "qaoa_double_pool"
+        pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_double_pool(n_vars)
+    elseif pool_type == "qaoa_nondiagonal_double_pool"
+        pool = ADAPT.ADAPT_QAOA.QAOApools.qaoa_nondiagonal_double_pool(n_vars)
+    else
+        println("Warning: unknown pool_type $pool_type, skipping operator map.")
+        return
+    end
+
+    op_map = Dict{String,String}()
+    for (i, op) in enumerate(pool)
+        op_map[string(i)] = pauli_op_to_string(op, n_vars)
+    end
+
+    map_file = joinpath(output_dir, "pool_operator_map_N$(n_vars)_$(pool_type).json")
+    open(map_file, "w") do f
+        JSON.print(f, op_map, 2)
+    end
+    println("Saved pool operator map to $map_file ($(length(op_map)) operators)")
+end
 
 """
     parse_commandline()
@@ -151,6 +213,14 @@ function main()
 
     initial_gammas = [0.001, 0.01, 0.1, 0.5, 1.0]
 
+    # Save pool operator index → Pauli string mapping once (worker 1 only to avoid races)
+    if worker_id == 1
+        unique_pools = Set([pool_type for (_, pool_type, _, _) in strategies])
+        for pt in unique_pools
+            save_pool_operator_map(n_vars, pt, results_dir)
+        end
+    end
+
     # Locate files
     # Options: "balancedsat", "notrianglesat", or "both"
     target_dirs = []
@@ -235,6 +305,7 @@ function main()
         clauses = convert_formula_to_clauses(formula)
         max_satisfied, _ = solve_max_e3sat_exact(n_vars, clauses)
         gurobi_energy = length(formula) - max_satisfied
+        gurobi_percent_satisfied = max_satisfied / length(formula)
 
         # Store results for this instance
         instance_results = []
@@ -252,12 +323,13 @@ function main()
                     layer_stopper_max=n_vars * 2,
                     energy_floor=gurobi_energy,
                     floor_stopper_threshold=0.1,
-                    optimizer_tolerance=1e-6,
+                    optimizer_tolerance=1e-3,
                     optimizer_max_iterations=1000,
-                    slow_stopper_threshold=1e-6,
+                    slow_stopper_threshold=1e-3,
                     slow_stopper_patience=5,
-                    gradient_threshold=1e-6,
-                    score_stopper_threshold=1e-6
+                    gradient_threshold=1e-3,
+                    score_stopper_threshold=1e-3,
+                    gurobi_percent_satisfied_threshold=gurobi_percent_satisfied
                 )
 
                 t_res = run_tetris(
@@ -305,7 +377,14 @@ function main()
 
                     # Traces
                     "adaptation_energies" => t_res.adaptation_energies,
-                    "adaptation_clause_satisfaction_percent_trace" => t_res.clause_satisfaction_percent_trace
+                    "adaptation_clause_satisfaction_percent_trace" => t_res.clause_satisfaction_percent_trace,
+                    "sampled_best_satisfaction" => t_res.sampled_best_satisfaction,
+
+                    # Circuit
+                    "selected_indices" => t_res.selected_indices,
+                    "selected_scores" => t_res.selected_scores,
+                    "gamma_values" => t_res.gamma_values,
+                    "beta_values" => t_res.beta_values
                 )
 
                 push!(instance_results, res_entry)

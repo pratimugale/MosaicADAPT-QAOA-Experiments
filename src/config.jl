@@ -10,10 +10,10 @@ Base.@kwdef struct TetrisConfig
     energy_floor::Float64 = -Inf # Stop if energy <= this value
 
     # ADAPT-VQE parameters
-    gradient_threshold::Float64 = 1e-8
-    score_stopper_threshold::Float64 = 1e-6
+    gradient_threshold::Float64 = 1e-3
+    score_stopper_threshold::Float64 = 1e-3
     parameter_stopper_max::Int = 200
-    layer_stopper_max::Int = 100
+    layer_stopper_max::Int = 20
 
     # KaMIS Parameters
     use_kamis::Bool = false
@@ -22,12 +22,19 @@ Base.@kwdef struct TetrisConfig
     # Slow stopper (convergence check)
     slow_stopper_threshold::Float64 = 1e-3
     slow_stopper_patience::Int = 3
-    floor_stopper_threshold::Float64 = 0.05 # Stop if energy is within this threshold of the actual ground state energy
+    floor_stopper_threshold::Float64 = 0.1 # Stop if energy is within this threshold of the actual ground state energy
 
     # Optimizer
-    optimizer_tolerance::Float64 = 1e-6
+    optimizer_tolerance::Float64 = 1e-3
     optimizer_max_iterations::Int = 100
 
     # Sampling
     num_shots::Int = 1000
+
+    # Approximation ratio stopping criterion
+    # Set this to the Gurobi percent satisfied clauses to enable the ApproxRatioStopper callback.
+    # Leave as NaN (default) to disable.
+    gurobi_percent_satisfied_threshold::Float64 = NaN
+    approx_ratio_stopper_min_layers::Int = 10
+    approx_ratio_stopper_threshold::Float64 = 0.97
 end
