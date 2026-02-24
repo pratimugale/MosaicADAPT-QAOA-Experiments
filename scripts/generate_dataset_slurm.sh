@@ -17,7 +17,7 @@
 # Capture arguments
 N_VARS=${1:-10}        # Default to 10 if not provided
 NUM_INSTANCES=${2:-50} # Default to 50 if not provided
-DATASET_NAME=${3:-"balancedsat"} # Subfolder inside dataset/satqubolib
+DATASET_NAME=${3:-"both"} # "balancedsat", "notrianglesat", or "both"
 
 CUR_DATE=$(date +'%Y-%m-%d_%H-%M-%S')
 export OPENBLAS_NUM_THREADS=1
@@ -63,35 +63,51 @@ mkdir -p "$LOG_DIR"
 echo "=== Benchmark Run Start: $CUR_DATE ==="
 echo "N_VARS: $N_VARS"
 echo "NUM_INSTANCES: $NUM_INSTANCES"
-echo "Dataset: $DATASET_NAME"
+echo "Requested Dataset: $DATASET_NAME"
 echo "Project Root: $PROJECT_ROOT"
 echo "Output Dir: $OUTPUT_DIR"
 
 # 1. Generate Dataset (Single Threaded Python)
 echo ">>> Step 1: Checking/Generating Dataset..."
 
-# Path to check for existing balanced instances
-DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/$DATASET_NAME"
-
-# Check if any .cnf files exist in the dataset directory
-# ls -A checks "almost all" files (skips . and ..). If directory exists and has files, this is truthy.
-if [ -d "$DATASET_DIR" ] && [ "$(ls -A "$DATASET_DIR"/*.cnf 2>/dev/null)" ]; then
-    echo "Dataset files found in $DATASET_DIR. Using existing dataset."
+# Determine which types to generate
+if [ "$DATASET_NAME" = "both" ]; then
+    TYPES_TO_GEN="balanced notriangle"
+elif [ "$DATASET_NAME" = "balancedsat" ]; then
+    TYPES_TO_GEN="balanced"
+elif [ "$DATASET_NAME" = "notrianglesat" ]; then
+    TYPES_TO_GEN="triangle"
 else
-    if [ "$DATASET_NAME" = "balancedsat" ]; then
-        echo "Generating new $DATASET_NAME dataset..."
-        python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42
-    else
-        echo "Dataset $DATASET_NAME not found and generation not configured. Run Python generator manually."
-        exit 1
-    fi
-
-    if [ $? -ne 0 ]; then
-        echo "Dataset generation failed!"
-        exit 1
-    fi
-    echo "Dataset generated successfully."
+    echo "Unknown dataset: $DATASET_NAME"
+    exit 1
 fi
+
+for TYPE in $TYPES_TO_GEN; do
+    # Map back to directory names
+    if [ "$TYPE" = "balanced" ]; then
+        DIR_NAME="balancedsat"
+        PY_TYPE="balanced"
+    else
+        DIR_NAME="notrianglesat"
+        PY_TYPE="triangle"
+    fi
+    
+    DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/$DIR_NAME"
+    
+    # Check if any .cnf files exist in the dataset directory for this N
+    if [ -d "$DATASET_DIR" ] && [ "$(ls -A "$DATASET_DIR"/*_${N_VARS}_vars*.cnf 2>/dev/null)" ]; then
+        echo "Dataset files for $TYPE (N=$N_VARS) found in $DATASET_DIR. Using existing."
+    else
+        echo "Generating new $TYPE dataset for N=$N_VARS..."
+        python3 "$PROJECT_ROOT/scripts/generate_max3sat_problem_instances.py" $N_VARS $NUM_INSTANCES --seed 42 --type $PY_TYPE
+        
+        if [ $? -ne 0 ]; then
+            echo "Dataset generation for $TYPE failed!"
+            exit 1
+        fi
+        echo "$TYPE dataset generated successfully."
+    fi
+done
 
 # 2. Run Benchmark (Parallel Julia Workers)
 # Use $SLURM_CPUS_PER_TASK if available, otherwise default to 5

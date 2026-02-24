@@ -91,7 +91,7 @@ function run_tetris(config::TetrisConfig, instance::Dict;
         ADAPT.Callbacks.ScoreStopper(config.score_stopper_threshold),
         ADAPT.Callbacks.ParameterStopper(config.parameter_stopper_max),
         ADAPT.Callbacks.SlowStopper(config.slow_stopper_threshold, config.slow_stopper_patience),
-        ADAPT.Callbacks.LayerStopper(2 * n_vars),
+        ADAPT.Callbacks.LayerStopper(config.layer_stopper_max),
         ClauseSatisfactionTracer(formula, n_vars),
     ]
 

@@ -187,14 +187,11 @@ def plot_outlier_counts(df_all, df_best, pdf):
     layer_threshold = layer_median + (2 * layer_std)
     sat_threshold = sat_mean - (2 * sat_std)
     
-    # 2 SD outliers - only flag if there is actually variance and skip perfect scores
-    high_layers_df = df_best[(df_best['layers'] > layer_threshold)] if layer_std > 1e-6 else pd.DataFrame()
-    low_sat_df = df_best[(df_best['tetris_satisfaction_percent'] < sat_threshold) & 
-                         (df_best['tetris_satisfaction_percent'] < 0.9999)] if sat_std > 1e-6 else pd.DataFrame()
+    high_layers_df = df_best[df_best['layers'] > layer_threshold]
+    low_sat_df = df_best[df_best['tetris_satisfaction_percent'] < sat_threshold]
     
-    # Create strings with ID and Value
-    high_layers_info = [f"{idx}: {l}" for idx, l in zip(high_layers_df['instance_idx'], high_layers_df['layers'])]
-    low_sat_info = [f"{idx}: {s:.4f}" for idx, s in zip(low_sat_df['instance_idx'], low_sat_df['tetris_satisfaction_percent'])]
+    high_layers_ids = high_layers_df['instance_idx'].tolist() if 'instance_idx' in high_layers_df.columns else []
+    low_sat_ids = low_sat_df['instance_idx'].tolist() if 'instance_idx' in low_sat_df.columns else []
     
     print("\n" + "="*80)
     print("BEST RESULT OUTLIERS (2 Standard Deviations)")

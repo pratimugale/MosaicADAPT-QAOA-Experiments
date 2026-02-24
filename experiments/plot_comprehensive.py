@@ -28,7 +28,7 @@ def process_traces(df):
     Extracts residual energy traces (Energy - Floor).
     Returns a long-format DataFrame for plotting.
     """
-    if 'adaptation_energies' not in df.columns or 'energy_floor_gurobi' not in df.columns:
+    if 'adaptation_energies' not in df.columns or 'energy_floor' not in df.columns:
         return pd.DataFrame()
         
     records = []
@@ -41,7 +41,7 @@ def process_traces(df):
     
     for _, row in df.iterrows():
         energies = row.get('adaptation_energies', [])
-        floor = row.get('energy_floor_gurobi')
+        floor = row.get('energy_floor')
         n_vars = row['n_vars']
         config = row.get('config_label', 'Unknown')
         
@@ -86,6 +86,57 @@ def process_traces(df):
         
     return pd.DataFrame(records)
 
+def process_satisfaction_traces(df):
+    """
+    Extracts satisfaction traces.
+    Returns a long-format DataFrame for plotting.
+    """
+    if 'adaptation_clause_satisfaction_percent_trace' not in df.columns:
+        return pd.DataFrame()
+        
+    records = []
+    
+    # First pass: Collect all traces and find max length
+    all_traces = []
+    
+    max_len_global = 0
+    
+    for _, row in df.iterrows():
+        traces = row.get('adaptation_clause_satisfaction_percent_trace', [])
+        n_vars = row['n_vars']
+        config = row.get('config_label', 'Unknown')
+        
+        if isinstance(traces, list) and len(traces) > 0:
+            all_traces.append({
+                'n_vars': n_vars,
+                'config': config,
+                'trace': traces
+            })
+            max_len_global = max(max_len_global, len(traces))
+
+    # Second pass: Forward fill and flatten
+    for item in all_traces:
+        trace = item['trace']
+        n_vars = item['n_vars']
+        config = item['config']
+        
+        # Forward fill this trace to max_len_global
+        current_len = len(trace)
+        final_val = trace[-1]
+        
+        # Create full length trace
+        full_trace = trace + [final_val] * (max_len_global - current_len)
+        
+        for layer_idx, sat in enumerate(full_trace):
+             records.append({
+                'n_vars': n_vars,
+                'config': config,
+                'layer': layer_idx + 1,
+                'satisfaction': sat * 100.0
+            })
+        
+    return pd.DataFrame(records)
+
 def plot_convergence_by_n(conv_df, n_vars, ax):
     """Plots spread of Residual Energy vs layers for a specific N."""
     if conv_df.empty:
@@ -119,11 +170,46 @@ def plot_convergence_by_n(conv_df, n_vars, ax):
     # Legend handling
     ax.legend(title='Configuration', bbox_to_anchor=(1.05, 1), loc='upper left')
 
+def plot_satisfaction_convergence_by_n(sat_df, n_vars, ax):
+    """Plots spread of Satisfaction vs layers for a specific N."""
+    if sat_df.empty:
+        return
+
+    subset = sat_df[sat_df['n_vars'] == n_vars]
+    
+    if subset.empty:
+        return
+    
+    # Plot Mean (Log Scale)
+    sns.lineplot(
+        data=subset, 
+        x='layer', 
+        y='satisfaction', 
+        hue='config', 
+        style='config',
+        estimator='mean',
+        errorbar=None, 
+        ax=ax,
+        linewidth=2,
+        palette='tab10'
+    )
+    
+    ax.set_title(f"Clause Satisfaction (Log Scale, N={n_vars})")
+    ax.set_xlabel("Adaptation Layer")
+    ax.set_ylabel("Satisfied Clauses (%)")
+    ax.grid(True, linestyle='--', alpha=0.3, which='both')
+    ax.set_yscale('log')
+    # Focus on the top part as requested
+    ax.set_ylim(87.5, 100.5) 
+    
+    # Legend handling
+    ax.legend(title='Configuration', bbox_to_anchor=(1.05, 1), loc='upper left')
+
 def plot_final_residual_boxplot(df):
     """Boxplot of final residual energies."""
     if 'residual_final' not in df.columns:
         df['residual_final'] = df.apply(
-            lambda row: row['energy'] - row['energy_floor_gurobi'], axis=1
+            lambda row: row['energy'] - row['energy_floor'], axis=1
         )
 
     # DROP NaNs
@@ -151,7 +237,9 @@ def create_report(df, metadata, output_dir, filename):
     output_path = os.path.join(output_dir, "comprehensive_report.pdf")
     
     # Process convergence data
+    # Process convergence data
     conv_df = process_traces(df)
+    sat_df = process_satisfaction_traces(df)
     
     with PdfPages(output_path) as pdf:
         # --- Page 1: Configuration ---
@@ -197,20 +285,11 @@ def create_report(df, metadata, output_dir, filename):
         fig_stats = plt.figure(figsize=(11, 8))
         fig_stats.suptitle("Summary Statistics", fontsize=16)
 
-        # 1. Calculate Approx Ratio (Satisfaction)
-        if 'approx_ratio_sat' not in df.columns:
-            # Use RC2 as the "Gurobi Answer" baseline (Optimal Satisfaction)
-            df['approx_ratio_sat'] = df.apply(
-                lambda row: row['satisfaction_percent'] / row['satisfaction_rc2_percent'] 
-                if pd.notnull(row['satisfaction_rc2_percent']) and row['satisfaction_rc2_percent'] > 0 else np.nan,
-                axis=1
-            )
 
         # 2. Aggregation
         # Group by N, Config
-        # Metrics: approx_ratio_sat, layers, adapt_time
+        # Metrics: layers, adapt_time
         stats = df.groupby(['n_vars', 'config_label']).agg({
-            'approx_ratio_sat': ['mean', 'median', 'max'],
             'layers': ['mean', 'median', 'max'],
             'adapt_time': ['mean', 'median', 'max']
         }).round(4)
@@ -222,7 +301,6 @@ def create_report(df, metadata, output_dir, filename):
         # Rename for display
         display_cols = [
             'n_vars', 'config_label',
-            'approx_ratio_sat_mean', 'approx_ratio_sat_median', 'approx_ratio_sat_max',
             'layers_mean', 'layers_median', 'layers_max',
             'adapt_time_mean', 'adapt_time_median', 'adapt_time_max'
         ]
@@ -234,7 +312,6 @@ def create_report(df, metadata, output_dir, filename):
         # Format column headers for the table
         headers = [
             "N", "Config", 
-            "Ratio\nMean", "Ratio\nMed", "Ratio\nMax",
             "Layers\nMean", "Layers\nMed", "Layers\nMax",
             "Adapt Time\nMean", "Adapt Time\nMed", "Adapt Time\nMax"
         ]
@@ -263,7 +340,7 @@ def create_report(df, metadata, output_dir, filename):
             # Total width approx 1.0 (relative to bbox width)
             # N=0.05, Config=0.25, Others=(0.7/9) ~0.077 each
             n_cols = len(headers)
-            col_widths = [0.05, 0.25] + [0.077] * (n_cols - 2)
+            col_widths = [0.05, 0.25] + [0.115] * (n_cols - 2)
 
             table = plt.table(
                 cellText=cell_text, 
@@ -378,6 +455,15 @@ def create_report(df, metadata, output_dir, filename):
             plt.tight_layout()
             pdf.savefig(fig)
             plt.close(fig)
+
+        # --- Page 6+: Satisfaction Plots (One per N) ---
+        if not sat_df.empty:
+            for n in n_values:
+                fig, ax = plt.subplots(figsize=(10, 6))
+                plot_satisfaction_convergence_by_n(sat_df, n, ax)
+                plt.tight_layout()
+                pdf.savefig(fig)
+                plt.close(fig)
             
     print(f"Report saved to {output_path}")
 

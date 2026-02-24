@@ -8,7 +8,7 @@ import JSON
 import Dates
 import Random
 using Printf
-using PyCall
+using Base.Threads
 using Base.Threads
 using LinearAlgebra
 using ArgParse
@@ -152,24 +152,43 @@ function main()
     initial_gammas = [0.001, 0.01, 0.1, 0.5, 1.0]
 
     # Locate files
-    # Only "balanced" for now as per plan
-    type = dataset_name
-    dataset_dir = joinpath(@__DIR__, "..", "dataset", "satqubolib", dataset_name)
+    # Options: "balancedsat", "notrianglesat", or "both"
+    target_dirs = []
+    if dataset_name == "both"
+        push!(target_dirs, "balancedsat")
+        push!(target_dirs, "notrianglesat")
+    else
+        push!(target_dirs, dataset_name)
+    end
 
-    if !isdir(dataset_dir)
-        println("Error: Dataset directory not found: $dataset_dir")
+    all_target_files = [] # Array of (subdir, filename)
+
+    for subdir in target_dirs
+        dataset_dir = joinpath(@__DIR__, "..", "dataset", "satqubolib", subdir)
+        if !isdir(dataset_dir)
+            println("Warning: Dataset directory not found: $dataset_dir")
+            continue
+        end
+
+        files = readdir(dataset_dir)
+        # Filter for .cnf files and match the N vars
+        matched = filter(f -> endswith(f, ".cnf") && occursin("sat_$(n_vars)_vars", f), files)
+
+        for f in matched
+            push!(all_target_files, (subdir, f))
+        end
+    end
+
+    if isempty(all_target_files)
+        println("Error: No target files found for N=$n_vars in $(dataset_name)")
         return
     end
 
-    all_files = readdir(dataset_dir)
-    # Filter for .cnf files and match the N vars
-    target_files = filter(f -> endswith(f, ".cnf") && occursin("sat_$(n_vars)_vars", f), all_files)
-
     # sort to ensure deterministic order across workers
-    sort!(target_files)
+    sort!(all_target_files, by=x -> x[2])
 
     # Partition files
-    total_files = length(target_files)
+    total_files = length(all_target_files)
 
     # Simple chunking
     files_per_worker = div(total_files, n_workers)
@@ -188,16 +207,19 @@ function main()
     if start_idx > total_files
         my_files = []
     else
-        my_files = target_files[start_idx:min(end_idx, total_files)]
+        my_files = all_target_files[start_idx:min(end_idx, total_files)]
     end
 
     println("Worker $worker_id processing $(length(my_files)) files (indices $start_idx to $end_idx of $total_files)")
 
     # Process Execution
     # We use @multibreak for loop control flow, but partitioning is handled above.
-    @multibreak for (local_idx, cnf_filename) in enumerate(my_files)
+    @multibreak for (local_idx, (subdir, cnf_filename)) in enumerate(my_files)
         # Create full path
-        cnf_path = joinpath(dataset_dir, cnf_filename)
+        cnf_path = joinpath(@__DIR__, "..", "dataset", "satqubolib", subdir, cnf_filename)
+
+        # Determine logical type for recording
+        type = occursin("triangle", subdir) ? "triangle" : "balanced"
 
         # Instance ID - global index matches the original list
         global_idx = start_idx + local_idx - 1
