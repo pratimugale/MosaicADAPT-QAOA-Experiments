@@ -117,14 +117,18 @@ echo ">>> Step 2: Running Benchmark with $N_WORKERS workers..."
 # On Slurm: wipe the ADAPT compiled cache so Julia rebuilds it with JULIA_CPU_TARGET=generic.
 # This avoids "Unable to find compatible target" errors when nodes have different CPU features.
 if [ -n "$SLURM_JOB_ID" ]; then
-    echo ">>> Clearing stale ADAPT precompile cache..."
-    rm -rf ~/.julia/compiled/v1.11/ADAPT/
+    echo ">>> Clearing stale precompile cache for all packages..."
+    rm -rf ~/.julia/compiled/
 fi
+
+# Force Julia to use the user depot ONLY (prevents fallback to system-installed znver2 packages)
+export JULIA_DEPOT_PATH="$HOME/.julia"
 
 # Precompile once before spawning parallel workers (avoids race condition on first compile)
 echo ">>> Precompiling project..."
-julia --project="$PROJECT_ROOT" --cpu-target=generic -e 'using Pkg; Pkg.precompile()'
-echo ">>> Precompilation done."
+julia --project="$PROJECT_ROOT" --cpu-target=generic -e 'using Pkg; Pkg.precompile()' \
+    && echo ">>> Precompilation done." \
+    || { echo "ERROR: Precompilation failed! Check logs."; exit 1; }
 
 for ((i=1; i<=N_WORKERS; i++))
 do
