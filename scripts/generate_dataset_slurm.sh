@@ -121,17 +121,7 @@ if [ -n "$SLURM_JOB_ID" ]; then
     rm -rf ~/.julia/compiled/
 fi
 
-# Force Julia to use the user depot ONLY.
-# The cluster's shared depot (/opt/shared/julia/...) contains package caches compiled for znver2.
-# When a non-znver2 compute node tries to load them, it crashes with "Rejecting this target".
-export JULIA_DEPOT_PATH="$HOME/.julia"
-
-# Precompile once before spawning parallel workers (avoids race condition on first compile)
-echo ">>> Precompiling project..."
-julia --project="$PROJECT_ROOT" -e 'using Pkg; Pkg.precompile()' \
-    && echo ">>> Precompilation done." \
-    || { echo "ERROR: Precompilation failed! Check logs."; exit 1; }
-
+# Let Julia handle precompilation automatically when the generic benchmark script is called
 for ((i=1; i<=N_WORKERS; i++))
 do
     echo "Starting Worker $i..."
