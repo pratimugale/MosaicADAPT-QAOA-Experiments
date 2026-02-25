@@ -11,7 +11,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=04:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem=64G
 
 # Capture arguments
@@ -113,6 +113,13 @@ done
 # Use $SLURM_CPUS_PER_TASK if available, otherwise default to 5
 N_WORKERS=${SLURM_CPUS_PER_TASK:-5}
 echo ">>> Step 2: Running Benchmark with $N_WORKERS workers..."
+
+# On Slurm: wipe the ADAPT compiled cache so Julia rebuilds it with JULIA_CPU_TARGET=generic.
+# This avoids "Unable to find compatible target" errors when nodes have different CPU features.
+if [ -n "$SLURM_JOB_ID" ]; then
+    echo ">>> Clearing stale ADAPT precompile cache..."
+    rm -rf ~/.julia/compiled/v1.11/ADAPT/
+fi
 
 # Precompile once before spawning parallel workers (avoids race condition on first compile)
 echo ">>> Precompiling project..."
