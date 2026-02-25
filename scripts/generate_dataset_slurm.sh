@@ -30,7 +30,7 @@ if [ -n "$SLURM_SUBMIT_DIR" ]; then
     # Add packages required on hpc
     vpkg_require python/3.13.1
     vpkg_require julia
-    vpkg_require gcc/14.2
+    vpkg_require gcc/12.2.0
     
     PROJECT_ROOT="$SLURM_SUBMIT_DIR"
     
