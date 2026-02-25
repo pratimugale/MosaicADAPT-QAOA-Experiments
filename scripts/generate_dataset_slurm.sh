@@ -123,13 +123,13 @@ fi
 
 # Precompile once before spawning parallel workers (avoids race condition on first compile)
 echo ">>> Precompiling project..."
-julia --project="$PROJECT_ROOT" -e 'using Pkg; Pkg.precompile()'
+julia --project="$PROJECT_ROOT" --cpu-target=generic -e 'using Pkg; Pkg.precompile()'
 echo ">>> Precompilation done."
 
 for ((i=1; i<=N_WORKERS; i++))
 do
     echo "Starting Worker $i..."
-    julia --project="$PROJECT_ROOT" --threads=1 "$PROJECT_ROOT/experiments/generate_dataset.jl" \
+    julia --project="$PROJECT_ROOT" --threads=1 --cpu-target=generic "$PROJECT_ROOT/experiments/generate_dataset.jl" \
         --n_vars $N_VARS \
         --num_instances $NUM_INSTANCES \
         --worker_id $i \
