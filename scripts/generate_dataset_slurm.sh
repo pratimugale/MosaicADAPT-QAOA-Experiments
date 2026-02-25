@@ -121,7 +121,10 @@ if [ -n "$SLURM_JOB_ID" ]; then
     rm -rf ~/.julia/compiled/
 fi
 
-# Let Julia handle precompilation automatically when the generic benchmark script is called
+# Create a completely isolated depot for this job run to avoid ANY shared znver2 caches
+# (Including those that might be hiding in system paths or home dir)
+export JULIA_DEPOT_PATH="$OUTPUT_DIR/julia_depot"
+
 for ((i=1; i<=N_WORKERS; i++))
 do
     echo "Starting Worker $i..."
