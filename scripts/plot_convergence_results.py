@@ -255,7 +255,25 @@ def plot_best_config_distribution(df_best, pdf):
     pdf.savefig()
     plt.close()
 
+def plot_time_histogram(df_best, pdf):
+    """
+    Plots a histogram of the convergence times for the best results.
+    """
+    if df_best.empty or 'adapt_time' not in df_best.columns:
+        return
 
+    plt.figure(figsize=(10, 6))
+    
+    # sns.histplot automatically creates the histogram bins and optionally a KDE curve
+    sns.histplot(data=df_best, x='adapt_time', bins=20, kde=True, color='blue')
+    
+    plt.title("Histogram of Convergence Times (Best Results)")
+    plt.xlabel("Convergence Time (s)")
+    plt.ylabel("Number of Instances")
+    plt.tight_layout()
+    
+    pdf.savefig()
+    plt.close()
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Summary Table from Benchmark Results")
@@ -364,6 +382,9 @@ def main():
         
         # Page 3: Outlier Counts
         plot_outlier_counts(df_all, df_best, pdf)
+        
+        # Page 4: Convergence Time Histogram
+        plot_time_histogram(df_best, pdf)
         
 
     print(f"PDF Report saved to {output_pdf}")
