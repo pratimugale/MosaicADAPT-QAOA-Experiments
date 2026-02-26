@@ -22,7 +22,6 @@ DATASET_NAME=${3:-"both"} # "balancedsat", "notrianglesat", or "both"
 CUR_DATE=$(date +'%Y-%m-%d_%H-%M-%S')
 export OPENBLAS_NUM_THREADS=1
 export JULIA_NUM_PRECOMPILE_TASKS=1
-export JULIA_CPU_TARGET="generic"
 
 # Determine the project root
 if [ -n "$SLURM_SUBMIT_DIR" ]; then
@@ -114,20 +113,7 @@ done
 N_WORKERS=${SLURM_CPUS_PER_TASK:-5}
 echo ">>> Step 2: Running Benchmark with $N_WORKERS workers..."
 
-# On Slurm: wipe the ADAPT compiled cache so Julia rebuilds it with JULIA_CPU_TARGET=generic.
-# This avoids "Unable to find compatible target" errors when nodes have different CPU features.
-if [ -n "$SLURM_JOB_ID" ]; then
-    echo ">>> On Slurm: Clearing stale precompile cache and isolating depot..."
-    rm -rf ~/.julia/compiled/
-    
-    # Create a completely isolated depot for this job run to avoid ANY shared znver2 caches
-    export JULIA_DEPOT_PATH="$OUTPUT_DIR/julia_depot"
-    
-    # Download/install packages into the empty isolated depot before starting workers
-    echo ">>> Instantiating project in isolated depot..."
-    julia --project="$PROJECT_ROOT" -e 'using Pkg; Pkg.instantiate()' || { echo "ERROR: Pkg.instantiate failed!"; exit 1; }
-fi
-
+# Let Julia handle precompilation automatically when the generic benchmark script is called
 for ((i=1; i<=N_WORKERS; i++))
 do
     echo "Starting Worker $i..."
