@@ -193,6 +193,9 @@ def plot_outlier_counts(df_all, df_best, pdf):
     high_layers_ids = high_layers_df['instance_idx'].tolist() if 'instance_idx' in high_layers_df.columns else []
     low_sat_ids = low_sat_df['instance_idx'].tolist() if 'instance_idx' in low_sat_df.columns else []
     
+    high_layers_info = [str(idx) for idx in high_layers_ids]
+    low_sat_info = [str(idx) for idx in low_sat_ids]
+
     print("\n" + "="*80)
     print("BEST RESULT OUTLIERS (2 Standard Deviations)")
     print("="*80)
@@ -238,7 +241,7 @@ def plot_best_config_distribution(df_best, pdf):
     
     # Create the plot
     plt.figure(figsize=(10, 6))
-    sns.barplot(x=config_counts.values, y=config_counts.index, palette="viridis")
+    sns.barplot(x=config_counts.values, y=config_counts.index, hue=config_counts.index, palette="viridis", legend=False)
     
     plt.title("Distribution of Best Configurations")
     plt.xlabel("Number of Instances")
