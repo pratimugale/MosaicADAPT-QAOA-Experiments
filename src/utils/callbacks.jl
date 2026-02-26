@@ -60,7 +60,6 @@ Approximation ratio = (expected % satisfied by Tetris) / (% satisfied by Gurobi)
 `:satisfiedclauses` is populated in the trace when this callback runs.
 """
 struct ApproxRatioStopper <: ADAPT.AbstractCallback
-    min_layers::Int
     approx_ratio_threshold::Float64
     gurobi_percent_satisfied_threshold::Float64
     formula_length::Int
@@ -72,11 +71,6 @@ function (stopper::ApproxRatioStopper)(
     ::ADAPT.Observable, ::ADAPT.QuantumState,
 )
     n_layers = length(ansatz.γ_layers)
-
-    # Only activate after min_layers
-    if n_layers <= stopper.min_layers
-        return false
-    end
 
     # Read the latest expected satisfied clauses (populated by ClauseSatisfactionTracer)
     satisfied_trace = get(trace, :satisfiedclauses, Any[])

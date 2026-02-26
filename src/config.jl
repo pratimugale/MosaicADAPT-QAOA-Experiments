@@ -35,6 +35,5 @@ Base.@kwdef struct TetrisConfig
     # Set this to the Gurobi percent satisfied clauses to enable the ApproxRatioStopper callback.
     # Leave as NaN (default) to disable.
     gurobi_percent_satisfied_threshold::Float64 = NaN
-    approx_ratio_stopper_min_layers::Int = 10
     approx_ratio_stopper_threshold::Float64 = 0.97
 end
