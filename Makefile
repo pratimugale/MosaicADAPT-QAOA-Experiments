@@ -50,4 +50,7 @@ benchmark-gurobi-floor:
 benchmark-scaling-exact-hamiltonian:
 	julia --project=. experiments/benchmark_scaling_exact_hamiltonian.jl $(SEED) $(INSTANCES)
 
+clear-dataset:
+	rm -rf dataset/satqubolib/
+
 .PHONY: dp install update-tetris install-python-deps init-julia-project generate-dataset test-determinism experiment benchmark-floor benchmark-scaling benchmark-gurobi-floor plot-scaling test test-rc2

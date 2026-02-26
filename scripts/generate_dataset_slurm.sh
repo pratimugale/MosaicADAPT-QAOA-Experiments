@@ -117,13 +117,16 @@ echo ">>> Step 2: Running Benchmark with $N_WORKERS workers..."
 # On Slurm: wipe the ADAPT compiled cache so Julia rebuilds it with JULIA_CPU_TARGET=generic.
 # This avoids "Unable to find compatible target" errors when nodes have different CPU features.
 if [ -n "$SLURM_JOB_ID" ]; then
-    echo ">>> Clearing stale precompile cache for all packages..."
+    echo ">>> On Slurm: Clearing stale precompile cache and isolating depot..."
     rm -rf ~/.julia/compiled/
+    
+    # Create a completely isolated depot for this job run to avoid ANY shared znver2 caches
+    export JULIA_DEPOT_PATH="$OUTPUT_DIR/julia_depot"
+    
+    # Download/install packages into the empty isolated depot before starting workers
+    echo ">>> Instantiating project in isolated depot..."
+    julia --project="$PROJECT_ROOT" -e 'using Pkg; Pkg.instantiate()' || { echo "ERROR: Pkg.instantiate failed!"; exit 1; }
 fi
-
-# Create a completely isolated depot for this job run to avoid ANY shared znver2 caches
-# (Including those that might be hiding in system paths or home dir)
-export JULIA_DEPOT_PATH="$OUTPUT_DIR/julia_depot"
 
 for ((i=1; i<=N_WORKERS; i++))
 do
