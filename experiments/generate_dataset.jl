@@ -289,7 +289,7 @@ function main()
         cnf_path = joinpath(@__DIR__, "..", "dataset", "satqubolib", subdir, cnf_filename)
 
         # Determine logical type for recording
-        type = occursin("triangle", subdir) ? "triangle" : "balanced"
+        type = occursin("triangle", subdir) ? "triangle" : (occursin("random", subdir) ? "random" : "balanced")
 
         # Instance ID - global index matches the original list
         global_idx = start_idx + local_idx - 1

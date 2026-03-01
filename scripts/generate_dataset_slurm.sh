@@ -17,7 +17,7 @@
 # Capture arguments
 N_VARS=${1:-10}        # Default to 10 if not provided
 NUM_INSTANCES=${2:-50} # Default to 50 if not provided
-DATASET_NAME=${3:-"both"} # "balancedsat", "notrianglesat", or "both"
+DATASET_NAME=${3:-"both"} # "balancedsat", "notrianglesat", "randomsat" or "both"
 
 CUR_DATE=$(date +'%Y-%m-%d_%H-%M-%S')
 export OPENBLAS_NUM_THREADS=1
@@ -75,7 +75,9 @@ if [ "$DATASET_NAME" = "both" ]; then
 elif [ "$DATASET_NAME" = "balancedsat" ]; then
     TYPES_TO_GEN="balanced"
 elif [ "$DATASET_NAME" = "notrianglesat" ]; then
-    TYPES_TO_GEN="triangle"
+    TYPES_TO_GEN="notriangle"
+elif [ "$DATASET_NAME" = "randomsat" ]; then
+    TYPES_TO_GEN="random"
 else
     echo "Unknown dataset: $DATASET_NAME"
     exit 1
@@ -86,9 +88,12 @@ for TYPE in $TYPES_TO_GEN; do
     if [ "$TYPE" = "balanced" ]; then
         DIR_NAME="balancedsat"
         PY_TYPE="balanced"
-    else
+    elif [ "$TYPE" = "notriangle" ]; then
         DIR_NAME="notrianglesat"
         PY_TYPE="triangle"
+    elif [ "$TYPE" = "random" ]; then
+        DIR_NAME="randomsat"
+        PY_TYPE="random"
     fi
     
     DATASET_DIR="$PROJECT_ROOT/dataset/satqubolib/$DIR_NAME"
