@@ -70,13 +70,15 @@ echo "Output Dir: $OUTPUT_DIR"
 echo ">>> Step 1: Checking/Generating Dataset..."
 
 # Determine which types to generate
-if [ "$DATASET_NAME" = "both" ]; then
+if [ "$DATASET_NAME" = "all" ]; then
+    TYPES_TO_GEN="balanced notriangle random"
+elif [ "$DATASET_NAME" = "both" ]; then
     TYPES_TO_GEN="balanced notriangle"
-elif [ "$DATASET_NAME" = "balancedsat" ]; then
+elif [ "$DATASET_NAME" = "balancedsat" ] || [ "$DATASET_NAME" = "balanced" ]; then
     TYPES_TO_GEN="balanced"
-elif [ "$DATASET_NAME" = "notrianglesat" ]; then
+elif [ "$DATASET_NAME" = "notrianglesat" ] || [ "$DATASET_NAME" = "notriangle" ] || [ "$DATASET_NAME" = "triangle" ]; then
     TYPES_TO_GEN="notriangle"
-elif [ "$DATASET_NAME" = "randomsat" ]; then
+elif [ "$DATASET_NAME" = "randomsat" ] || [ "$DATASET_NAME" = "random" ]; then
     TYPES_TO_GEN="random"
 else
     echo "Unknown dataset: $DATASET_NAME"

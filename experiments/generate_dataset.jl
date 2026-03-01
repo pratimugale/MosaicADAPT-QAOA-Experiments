@@ -222,9 +222,12 @@ function main()
     end
 
     # Locate files
-    # Options: "balancedsat", "notrianglesat", or "both"
     target_dirs = []
-    if dataset_name == "both"
+    if dataset_name == "all"
+        push!(target_dirs, "balancedsat")
+        push!(target_dirs, "notrianglesat")
+        push!(target_dirs, "randomsat")
+    elseif dataset_name == "both"
         push!(target_dirs, "balancedsat")
         push!(target_dirs, "notrianglesat")
     else
