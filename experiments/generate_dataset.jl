@@ -211,7 +211,7 @@ function main()
         (true, "qaoa_nondiagonal_double_pool", 0.0, "KaMIS_NewPool")
     ]
 
-    initial_gammas = [0.001, 0.01, 0.1, 0.5, 1.0]
+    initial_gammas = [0.001, 0.01, 0.1]
 
     # Save pool operator index → Pauli string mapping once (worker 1 only to avoid races)
     if worker_id == 1
@@ -320,15 +320,15 @@ function main()
                     initial_gamma=gamma,
                     hamiltonian_type="exact",
                     num_shots=1000,
-                    layer_stopper_max=n_vars * 2,
+                    layer_stopper_max=3,
                     energy_floor=gurobi_energy,
                     floor_stopper_threshold=0.1,
-                    optimizer_tolerance=1e-3,
+                    optimizer_tolerance=1e-6,
                     optimizer_max_iterations=1000,
-                    slow_stopper_threshold=1e-3,
+                    slow_stopper_threshold=1e-6,
                     slow_stopper_patience=5,
-                    gradient_threshold=1e-3,
-                    score_stopper_threshold=1e-3,
+                    gradient_threshold=1e-6,
+                    score_stopper_threshold=1e-6,
                     gurobi_percent_satisfied_threshold=gurobi_percent_satisfied
                 )
 
