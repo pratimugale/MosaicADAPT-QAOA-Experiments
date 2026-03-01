@@ -87,7 +87,7 @@ function (stopper::ApproxRatioStopper)(
 
     if approx_ratio >= stopper.approx_ratio_threshold
         @info "ApproxRatioStopper: Stopping — approximation ratio $(round(approx_ratio, digits=4)) ≥ $(stopper.approx_ratio_threshold) after $n_layers layers."
-        push!(get!(trace, :callback_flagged, Any[]), "ApproxRatioStopper")
+        trace[:callback_flagged] = "ApproxRatioStopper"
         return true
     end
 
