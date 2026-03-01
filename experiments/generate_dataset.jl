@@ -230,6 +230,12 @@ function main()
     elseif dataset_name == "both"
         push!(target_dirs, "balancedsat")
         push!(target_dirs, "notrianglesat")
+    elseif dataset_name == "random" || dataset_name == "randomsat"
+        push!(target_dirs, "randomsat")
+    elseif dataset_name == "balanced" || dataset_name == "balancedsat"
+        push!(target_dirs, "balancedsat")
+    elseif dataset_name == "notriangle" || dataset_name == "notrianglesat" || dataset_name == "triangle"
+        push!(target_dirs, "notrianglesat")
     else
         push!(target_dirs, dataset_name)
     end
