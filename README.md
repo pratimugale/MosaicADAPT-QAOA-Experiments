@@ -1,6 +1,6 @@
 # MosaicADAPT-QAOA-Experiments
 
-This library consumes the fork of [MosaicADAPT-QAOA](https://github.com/pratimugale/MosaicADAPT-QAOA) and contains the source code for the experiments that test the performance of MosaicADAPT-QAOA, Tetris-QAOA and ADAPT-QAOA on random 3-SAT instances.
+This library consumes the fork of [MosaicADAPT-QAOA](https://github.com/pratimugale/MosaicADAPT-QAOA-Experiments) and contains the source code for the experiments that test the performance of MosaicADAPT-QAOA, Tetris-QAOA and ADAPT-QAOA on random 3-SAT instances.
 The original MosaicADAPT-QAOA repository contains the implementation of the algorithm, while this repository contains the source code for the experiments on top of the variants in that repository.
 
 ## Installation
