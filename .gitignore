@@ -28,4 +28,20 @@ LocalPreferences.toml
 JuliaLocalPreferences.toml
 
 results/
-./dataset/
+./dataset/**/**
+
+# Python related
+*.pyc
+
+donotuse_oldcode/
+
+external/*
+
+*.pdf
+*.csv
+*.png
+*.json
+*.log
+*.out
+*.err
+*.cnf
