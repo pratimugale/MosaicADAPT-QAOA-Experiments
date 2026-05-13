@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.11'
+        os:
+          - ubuntu-latest
+        arch:
+          - x64
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Clone TetrisADAPT dependency
+      - name: Checkout TetrisADAPT.jl
+        uses: actions/checkout@v3
+        with:
+          repository: pratimugale/TetrisADAPT.jl
+          path: TetrisADAPT.jl
+          token: ${{ secrets.GH_PAT }}
+
+      # Setup Python for dataset generation dependencies
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+
+      # Setup Julia
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+
+      - uses: julia-actions/cache@v1
+
+      - uses: julia-actions/julia-buildpkg@v1
+
+      - uses: julia-actions/julia-runtest@v1
+
+      - name: Test Determinism
+        run: |
+          make test-determinism
+
+      - name: Test RC2 Solver
+        run: |
+          make test-rc2
