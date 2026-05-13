@@ -6,7 +6,7 @@ project_hash = "4c9033bbb64bdb1d514c93bfe3e818582f462e65"
 
 [[deps.ADAPT]]
 deps = ["BlockDavidson", "CSV", "Conda", "DataFrames", "FiniteDifferences", "Graphs", "KrylovKit", "LinearAlgebra", "Optim", "PauliOperators", "PyCall", "Random", "Revise", "Serialization", "Test"]
-path = "TetrisADAPT.jl"
+path = "MosaicADAPT-QAOA"
 uuid = "cf1f529f-af3f-4d7a-b5f1-0e7d3fdd5852"
 version = "1.0.0-DEV"
 

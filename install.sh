@@ -10,11 +10,11 @@ $CC --version
 $CXX --version
 
 # Configuration
-REPO_URL="https://github.com/pratimugale/TetrisADAPT.jl.git"
-DIR_NAME="TetrisADAPT.jl"
+REPO_URL="https://github.com/pratimugale/MosaicADAPT-QAOA"
+DIR_NAME="MosaicADAPT-QAOA"
 VENV_DIR="venv"
 
-echo "Starting installation for mis-tetris-adapt..."
+echo "Starting installation for MosaicADAPT-QAOA-Experiments..."
 
 # 1. Clone TetrisADAPT.jl if it doesn't exist
 if [ ! -d "$DIR_NAME" ]; then
@@ -40,6 +40,6 @@ pip install -r requirements.txt
 echo "Building Julia dependencies with PyCall linked to venv..."
 # Explicitly set PYTHON to the absolute path of the venv python
 export PYTHON="$(pwd)/$VENV_DIR/bin/python3"
-julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.develop(path="TetrisADAPT.jl"); Pkg.build("PyCall")'
+julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.develop(path="MosaicADAPT-QAOA"); Pkg.build("PyCall")'
 
 echo "Installation script finished successfully."

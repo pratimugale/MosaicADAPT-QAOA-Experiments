@@ -22,6 +22,7 @@ include("exact_solvers/gurobi_exact_hamiltonian.jl")
 # Include Runners
 # include("qaoa/qaoa_pools.jl")
 include("qaoa/run_tetris.jl")
+include("qaoa/run_vanilla_qaoa.jl")
 # include("qaoa/greedy_tetris.jl")
 # include("bruteforce/bruteforce.jl")
 end # module MIS_TETRIS_ADAPT
