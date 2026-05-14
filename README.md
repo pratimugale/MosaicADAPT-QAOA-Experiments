@@ -16,8 +16,8 @@ git clone https://github.com/pratimugale/MosaicADAPT-QAOA-Experiments
 6. Run `make smoke-kamis` to verify if the installation of mmwis has successfully completed. This completes the installation of the repo.
 
 ## Usage
-1. Generate the dataset containing Max3SAT instances - 50 `uniform random` and 50 `balanced` using: `bash scripts/generate_max3sat_dataset.sh <NUM_VARS>`.
+1. Generate the dataset containing Max3SAT instances - 50 `uniform random` and 50 `balanced` using: `bash scripts/generate_dataset.sh <NUM_VARS>`.
 2. Set the initial gamma that needs to be tested in [experiments/qaoa-sat.jl](experiments/qaoa-sat.jl) in the `gammas` variable.
-3. Run the ADAPT variants - MosaicADAPT-QAOA, Tetris-QAOA and ADAPT-QAOA - for  using the slurm script provided at [scripts/run_qaoa_benchmark.sh](scripts/run_qaoa_benchmark.sh). The script will also generate the plots that compare the performance of the 3 methods. 
+3. Run the ADAPT variants - MosaicADAPT-QAOA, Tetris-QAOA and ADAPT-QAOA - for using the script provided at [scripts/run_mosaic_experiment.sh](scripts/run_mosaic_experiment.sh). The script will also generate the plots that compare the performance of the 3 methods. 
 
 Note: This repo was called mis-tetris-adapt earlier, with the Julia package being called "MIS_TETRIS_ADAPT.jl". MIS stands for Max Independent Set, which is what we solve in MosaicADAPT-QAOA. Whenever we refer to the "greedy" method in this repo, we refer to TETRIS-QAOA. Whenever we refer to "kamis" or "MIS" method, we refer to MosaicADAPT-QAOA. This renaming will be done soon in the future.
