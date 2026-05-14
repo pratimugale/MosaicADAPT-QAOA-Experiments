@@ -29,7 +29,7 @@ function run_qaoa_benchmark(input_dir::String, output_dir::String, override_id::
     # Precision
     tol = 1e-6
 
-    gammas = [0.5]
+    gammas = [0.01]
 
     # 5 protocols:
     # 1. Adapt-QAOA (Vanilla) - one by one

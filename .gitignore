@@ -45,3 +45,4 @@ external/*
 *.out
 *.err
 *.cnf
+*.metis*
