@@ -74,8 +74,8 @@ def generate_plots(results_dir, plots_dir):
                 if method == "vanilla_qaoa": method = "adapt_qaoa"
                 if method == "vanilla_vqe": method = "adapt_vqe"
                 if method == "regular_qaoa": method = "standard_qaoa"
-                if method == "tetris_greedy": method = "tetris_adapt_qaoa_greedy"
-                if method == "tetris_kamis": method = "tetris_adapt_qaoa_kamis"
+                if method == "tetris_greedy" or method == "tetris_qaoa_greedy": method = "tetris_adapt_qaoa_greedy"
+                if method == "tetris_kamis" or method == "mosaic_adapt_qaoa": method = "tetris_adapt_qaoa_kamis"
 
                 # Handle files with generic "greedy"/"kamis" method field
                 if method in ["greedy", "kamis"]:
