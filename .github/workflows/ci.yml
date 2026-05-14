@@ -23,13 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Clone TetrisADAPT dependency
-      - name: Checkout TetrisADAPT.jl
+      # Clone MosaicADAPT-QAOA dependency
+      - name: Checkout MosaicADAPT-QAOA
         uses: actions/checkout@v3
         with:
-          repository: pratimugale/TetrisADAPT.jl
-          path: TetrisADAPT.jl
-          token: ${{ secrets.GH_PAT }}
+          repository: pratimugale/MosaicADAPT-QAOA
+          path: MosaicADAPT-QAOA
+          persist-credentials: false
 
       # Setup Python for dataset generation dependencies
       - uses: actions/setup-python@v4
