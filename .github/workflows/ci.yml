@@ -29,7 +29,7 @@ jobs:
         with:
           repository: pratimugale/MosaicADAPT-QAOA
           path: MosaicADAPT-QAOA
-          token: ${{ secrets.GH_PAT }}
+          persist-credentials: false
 
       # Setup Python for dataset generation dependencies
       - uses: actions/setup-python@v4
